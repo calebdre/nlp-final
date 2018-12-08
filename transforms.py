@@ -30,5 +30,5 @@ def filter_length(data1, data2, n):
     data2 = data2.loc[data1.index]
     return data1.reset_index(drop=True), data2.reset_index(drop=True)
 
-def to_lang_vocab(data, max_vocab_size = 30000):
-    return Vocab().build(data, max_vocab_size = max_vocab_size)
+def to_lang_vocab(data):
+    return Vocab().build(data)

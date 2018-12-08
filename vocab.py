@@ -1,7 +1,7 @@
 from collections import Counter
 
 class Vocab:
-    def build(self, data, max_vocab_size = 30000):
+    def build(self, data):
         vocab = " ".join(data).split(" ")
         
         vocab.append("SOS")
