@@ -1,5 +1,6 @@
 import random 
 import torch
+import collections
 
 class LangPair:
     def __init__(self, lang1, eos_idx1, lang2, eos_idx2):
@@ -10,8 +11,10 @@ class LangPair:
         self.eos2 = eos_idx2
         
         self.data_len = len(lang1)
+        self.lang1_sent_lengths = list(set([len(sent) for sent in lang1]))
+        self.lang2_sent_lengths = list(set([len(sent) for sent in lang2]))
     
-    def get_sentence(self, n):
+    def get_sent(self, n):
         s1 = self.lang1[n] + [self.eos1]
         s2 = self.lang2[n] + [self.eos2]
         
@@ -20,5 +23,37 @@ class LangPair:
             torch.tensor(s2, dtype=torch.long).view(-1, 1)
         )
     
-    def get_rand_sentence(self):
-        return self.get_sentence(random.randint(0, self.data_len))
+    def get_rand_sent(self, lengths, max_iters = 100):
+        if not isinstance(lengths, collections.Iterable):
+            raise "'lengths' must be a 2-element iterable"
+        
+        l1, l2 = lengths
+        
+        for i in range(max_iters):
+            s1, s2 = self.get_sent(random.randint(0, self.data_len))
+            if s1.shape[0] != l1 or s2.shape[0] != l2:
+                continue
+            
+            return s1, s2
+        
+        return None
+
+    def get_rand_batch(self, size = 32):
+        while True:
+            len1 = random.choice(self.lang1_sent_lengths)
+            len2 = random.choice(self.lang2_sent_lengths)
+            
+            batch1 = torch.zeros(size, len1)
+            batch2 = torch.zeros(size, len2)
+            
+            while len(batch1) < size:
+                sents = self.get_rand_sent((len1, len2))
+                if sents is not None:
+                    s1, s2 = sents
+                    idx = len(batch1)
+                    
+                    batch1[idx] = s1
+                    batch2[idx] = s2
+            
+            return batch1, batch2
+                
