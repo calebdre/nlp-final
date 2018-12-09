@@ -20,7 +20,6 @@ class Coach:
         self.enc_optim.zero_grad()
         
         batch_size, input_len = input_batch.shape
-        
         encoder_hiddens = torch.zeros(batch_size, input_len, self.encoder.hidden_size)
             
         for i in tqdm(range(input_len), desc = "Target Sample ({})".format(input_len), leave = False, unit = "token"):
@@ -49,12 +48,13 @@ class Coach:
         
         loss /= target_batch.shape[1]
         loss.backward()
+
         return loss.item(), att
         
     def train(self, iterations = 75000, print_interval = 1500, learning_rate = .01, batch_size = 32):
         losses = []
         
-        for i in tqdm(range(1, iterations+1), desc = "Training Iterations"):
+        for i in tqdm(range(1, iterations+1), desc = "Training Iterations", unit = "sample"):
             input_batch, target_batch = self.lang_pair.get_rand_batch(batch_size = batch_size)
             
             encoder_hiddens = self.train_encoder(input_batch)
