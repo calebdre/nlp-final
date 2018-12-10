@@ -24,15 +24,15 @@ class Coach:
         print_interval = int(print_interval / batch_size)
         
         for i in tqdm(range(1, iterations+1), desc = "Training Iterations", unit = "batch"):
-            input_batch, target_batch = self.lang_pair.get_rand_batch(size = batch_size)
-            encoder_out, encoder_hidden = self.train_encoder(input_batch)
+            input_batch, input_batch_lengths, target_batch, target_batch_lengths = self.lang_pair.get_rand_batch(size = batch_size)
+            encoder_out, encoder_hidden = self.train_encoder(input_batch, input_batch_lengths)
 #             loss, attns = self.train_decoder(target_batch, encoder_hidden, encoder_out)
             loss = self.train_decoder(target_batch, encoder_hidden, encoder_out)
             losses.append(loss)
             interval_losses.append(loss)
             
             if i % print_interval == 0:
-                interval = int(i / iterations)
+                interval = int(i / print_interval)
                 total_intervals = int(iterations / print_interval)
                 avg_interval_loss = sum(interval_losses) / len(interval_losses)
                 m = "Interval ({}/{}) average loss: {:.4f}".format(interval, total_intervals, avg_interval_loss)
@@ -41,14 +41,14 @@ class Coach:
         
         return losses
     
-    def train_encoder(self, input_batch):
+    def train_encoder(self, input_batch, input_batch_lengths):
         self.enc_optim.zero_grad()
         
         batch_size, input_len = input_batch.shape
         outs = torch.zeros(batch_size, input_len, self.encoder.output_size, device = self.device)
-        
+        hidden = self.encoder.init_hidden()
         for i in range(input_len):
-            out, hidden = self.encoder(input_batch[:, i])
+            out, hidden = self.encoder(input_batch[:, i], hidden)
             outs[:, i] = out[:, 0]
             
         self.enc_optim.step()

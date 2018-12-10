@@ -1,25 +1,25 @@
 import random 
-import torch
 import collections
 
+import torch
+from torch.nn.utils.rnn import pad_sequence
+
 class LangPair:
-    def __init__(self, lang1, sos_idx1, lang2, sos_idx2, debug = False, device = torch.device("cpu")):
-        self.lang1 = lang1
-        self.sos1 = sos_idx1
+    def __init__(self, lang1_vocab, lang2_vocab, debug = False, device = torch.device("cpu")):
+        self.lang1_vocab = lang1_vocab
+        self.lang2_vocab = lang2_vocab
         
-        self.lang2 = lang2
-        self.sos2 = sos_idx2
+        self.lang1 = lang1_vocab.get_idxs()
+        self.lang2 = lang2_vocab.get_idxs()
         
         self.debug = debug
         self.device = device
         
-        self.data_len = len(lang1) - 1
-        self.lang1_sent_lengths = list(set([len(sent) for sent in lang1]))
-        self.lang2_sent_lengths = list(set([len(sent) for sent in lang2]))
-    
+        self.data_len = len(self.lang1) - 1
+        
     def get_sent(self, n):
         s1 = self.lang1[n]
-        s2 = [self.sos2] + self.lang2[n]
+        s2 = [self.lang2_vocab.sos_idx] + self.lang2[n]
         
         return (
             torch.tensor(s1, dtype=torch.long, device = self.device),
@@ -40,27 +40,25 @@ class LangPair:
             return s1, s2
         
         return None
-
+    
     def get_rand_batch(self, size = 32):
-        while True:
-            len1 = random.choice(self.lang1_sent_lengths)
-            len2 = random.choice(self.lang2_sent_lengths)
-            
-            if self.debug:
-                print("Current batch:\nLang1 length: {}\tLang2 Length: {}\n".format(len1, len2))
-            
-            batch1 = []
-            batch2 = []
-            
-            while len(batch1) < size:
-                sents = self.get_rand_sent((len1, len2))
-                if sents is not None:
-                    s1, s2 = sents
-                    batch1.append(s1)
-                    batch2.append(s2)
-                else:
-                    break
-            if sents == None:
-                continue
-            return torch.stack(batch1), torch.stack(batch2)
-                
+        sent_idxs = random.choices(range(self.data_len), k =size)
+        sents = [self.get_sent(idx) for idx in sent_idxs]
+        
+        s1s = [s[0] for s in sents]
+        s2s = [s[1] for s in sents]
+        
+        s1s, s1s_lengths = self.prepare_batch(s1s, self.lang1_vocab.pad_idx)
+        s2s, s2s_lengths = self.prepare_batch(s2s, self.lang2_vocab.pad_idx)
+        
+        return s1s, s1s_lengths, s2s, s2s_lengths
+    
+    def prepare_batch(self, batch, pad_idx):
+        lengths = [seq.shape[0] for seq in batch]
+        lengths = torch.tensor(lengths)
+        lengths, sorted_idxs = torch.sort(lengths, descending = True)
+        
+        batch = [batch[idx.item()] for idx in sorted_idxs]
+        batch = pad_sequence(batch, padding_value = pad_idx, batch_first = True)
+        
+        return batch, lengths

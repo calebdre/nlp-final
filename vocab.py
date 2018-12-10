@@ -4,10 +4,12 @@ class Vocab:
     def build(self, data):
         vocab = list(set(" ".join(data).split(" ")))
         
-        vocab.append("SOS")
+        vocab.append("<SOS>")
         self.sos_idx = len(vocab) - 1
-        vocab.append("EOS")
+        vocab.append("<EOS>")
         self.eos_idx = len(vocab) - 1
+        vocab.append("<PAD>")
+        self.pad_idx = len(vocab) - 1
         
         self.data = data
         self.idx_token = vocab
