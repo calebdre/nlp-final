@@ -3,12 +3,14 @@ import torch
 import collections
 
 class LangPair:
-    def __init__(self, lang1, sos_idx1, lang2, sos_idx2):
+    def __init__(self, lang1, sos_idx1, lang2, sos_idx2, debug = False):
         self.lang1 = lang1
         self.sos1 = sos_idx1
         
         self.lang2 = lang2
         self.sos2 = sos_idx2
+        
+        self.debug = debug
         
         self.data_len = len(lang1) - 1
         self.lang1_sent_lengths = list(set([len(sent) for sent in lang1]))
@@ -43,6 +45,9 @@ class LangPair:
             len1 = random.choice(self.lang1_sent_lengths)
             len2 = random.choice(self.lang2_sent_lengths)
             
+            if self.debug:
+                print("Current batch:\nLang1 length: {}\tLang2 Length: {}\n".format(len1, len2))
+            
             batch1 = []
             batch2 = []
             
@@ -52,7 +57,9 @@ class LangPair:
                     s1, s2 = sents
                     batch1.append(s1)
                     batch2.append(s2)
-            
-            
+                else:
+                    break
+            if sents == None:
+                continue
             return torch.stack(batch1), torch.stack(batch2)
                 

@@ -2,7 +2,7 @@ from collections import Counter
 
 class Vocab:
     def build(self, data):
-        vocab = " ".join(data).split(" ")
+        vocab = list(set(" ".join(data).split(" ")))
         
         vocab.append("SOS")
         self.sos_idx = len(vocab) - 1
@@ -13,6 +13,10 @@ class Vocab:
         self.idx_token = vocab
         self.token_idx = dict(zip(vocab, range(0,len(vocab))))
         return self
+    
+    @property
+    def size(self):
+        return len(self.idx_token)
     
     def from_idx(self, idx):
         return self.idx_token[idx]

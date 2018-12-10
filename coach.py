@@ -16,58 +16,62 @@ class Coach:
         
         self.loss_fn = loss_fn
     
+    def train(self, iterations = 75000, print_interval = 1500, learning_rate = .01, batch_size = 32):
+        losses = []
+        interval_losses = []
+        iterations = int(iterations / batch_size)
+        print_interval = int(print_interval / batch_size)
+        
+        for i in tqdm(range(1, iterations+1), desc = "Training Iterations", unit = "batch"):
+            input_batch, target_batch = self.lang_pair.get_rand_batch(size = batch_size)
+            
+            encoder_out, encoder_hidden = self.train_encoder(input_batch)
+#             loss, attns = self.train_decoder(target_batch, encoder_hidden, encoder_out)
+            loss = self.train_decoder(target_batch, encoder_hidden, encoder_out)
+            losses.append(loss)
+            interval_losses.append(loss)
+            
+            if i % print_interval == 0:
+                interval = int(i / print_interval)
+                avg_interval_loss = sum(interval_losses) / len(interval_losses)
+                print("Interval {}/{}:\tAverage Loss: {:.4f}\n".format(interval, print_interval, avg_interval_loss))
+                interval_losses = []
+        
+        return losses
+    
     def train_encoder(self, input_batch):
         self.enc_optim.zero_grad()
         
         batch_size, input_len = input_batch.shape
-        encoder_hiddens = torch.zeros(batch_size, input_len, self.encoder.hidden_size)
-            
-        for i in tqdm(range(input_len), desc = "Target Sample ({})".format(input_len), leave = False, unit = "token"):
-            encoder_out, encoder_hidden = self.encoder(input_batch[:, i])
-            encoder_hiddens[:, i] = encoder_hidden
+        outs = torch.zeros(batch_size, input_len, self.encoder.output_size)
+        
+        for i in range(input_len):
+            out, hidden = self.encoder(input_batch[:, i])
+            outs[:, i] = out[:, 0]
             
         self.enc_optim.step()
-        return encoder_hiddens
+        return outs, hidden
     
-    def train_decoder(self, target_batch):
+    def train_decoder(self, target_batch, encoder_hidden, encoder_out):
         self.dec_optim.zero_grad()
         loss = 0
-        attns = []
+#         attns = []
         
         target_len = target_batch.shape[1]
-        decoder_hidden = encoder_hiddens
+        hidden = encoder_hidden
         
-        for i in tqdm(range(target_len), desc = "Decoder Sample ({})".format(target_len, leave = False, unit = "token"):
+        for i in range(target_len):
             dec_input = target_batch[:, i]
-            decoder_out, decoder_hidden, att = decoder(dec_input, decoder_hidden, encoder_hiddens)
+            out, hidden = self.decoder(dec_input, hidden, encoder_out)
             
-            loss += self.loss_fn(decoder_out, token)
-            attns.append(attn)
+            loss += self.loss_fn(out, target_batch[:, i])
+#             attns.append(attn)
         
         self.dec_optim.step()
         
         loss /= target_batch.shape[1]
         loss.backward()
 
-        return loss.item(), att
-        
-    def train(self, iterations = 75000, print_interval = 1500, learning_rate = .01, batch_size = 32):
-        losses = []
-        
-        for i in tqdm(range(1, iterations+1), desc = "Training Iterations", unit = "sample"):
-            input_batch, target_batch = self.lang_pair.get_rand_batch(batch_size = batch_size)
-            
-            encoder_hiddens = self.train_encoder(input_batch)
-            loss, attns = self.train_decoder(target_batch)
-            
-            if i % print_interval == 0:
-                interval = i / print_interval
-                
-                interval_start = (interval - 1) * print_interval
-                interval_loss = sum(losses[interval_start:i])
-                avg_interval_loss = interval_loss / print_interval
-                      
-                print("Interval: {}\tAverage Loss: {}".format(interval, avg_interval_loss))
-        
-        return losses
-         
+#         return loss.item(), att
+        return loss.item()
+    
