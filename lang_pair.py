@@ -51,21 +51,11 @@ class LangPair:
         s1s = [s[0] for s in sents]
         s2s = [s[1] for s in sents]
         
-        s1s, s1s_lengths = self.prepare_batch(s1s, self.lang1_vocab.pad_idx)
-        s2s, s2s_lengths = self.prepare_batch(s2s, self.lang2_vocab.pad_idx)
+        s1s = pad_sequence(s1s, padding_value = self.lang1_vocab.pad_idx, batch_first = True)
+        s2s = pad_sequence(s2s, padding_value = self.lang2_vocab.pad_idx, batch_first = True)
         
         return s1s, s1s_lengths, s2s, s2s_lengths
-    
-    def prepare_batch(self, batch, pad_idx):
-        lengths = [seq.shape[0] for seq in batch]
-        lengths = torch.tensor(lengths)
-        lengths, sorted_idxs = torch.sort(lengths, descending = True)
-        
-        batch = [batch[idx.item()] for idx in sorted_idxs]
-        batch = pad_sequence(batch, padding_value = pad_idx, batch_first = True)
-        
-        return batch, lengths
-    
+
     def get_all_as_batches(self, size = 32):
         num_batches = int(self.data_len / size)
         batches = [self.get_sents(range((i - 1) * size, i * size)) for i in range(1, num_batches)]
@@ -75,8 +65,8 @@ class LangPair:
             s1s = [b[0] for b in batch]
             s2s = [b[1] for b in batch]
             
-            s1s, s1lens = self.prepare_batch(s1s, self.lang1_vocab.pad_idx)
-            s2s, s2lens = self.prepare_batch(s2s, self.lang2_vocab.pad_idx)
+            s1s = pad_sequence(s1s, padding_value = self.lang1_vocab.pad_idx, batch_first = True)
+            s2s = pad_sequence(s2s, padding_value = self.lang2_vocab.pad_idx, batch_first = True)
             
             # shuffle
             s = list(zip(s1s, s2s))
