@@ -2,14 +2,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class Decoder(nn.Module):
-    def __init__(self, target_vocab_size, embedding_size, hidden_size, batch_size, n_layers = 1, dropout = 0):
+    def __init__(self, target_vocab_size, hidden_size, batch_size, n_layers = 1, dropout = 0):
         super(Decoder, self).__init__()
         self.hidden_size = hidden_size
         self.batch_size = batch_size
 
-        self.embedding = nn.Embedding(target_vocab_size, embedding_size)
+        self.embedding = nn.Embedding(target_vocab_size, hidden_size)
         
-        self.gru = nn.GRU(embedding_size, hidden_size, num_layers = n_layers, batch_first = True, dropout = dropout)
+        self.gru = nn.GRU(hidden_size, hidden_size, num_layers = n_layers, batch_first = True, dropout = dropout)
         self.out = nn.Linear(hidden_size, target_vocab_size)
 
     def forward(self, batch_input, hidden, encoder_out):

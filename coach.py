@@ -33,9 +33,9 @@ class Coach:
             interval_losses.append(loss)
             
             if i % print_interval == 0:
-                interval = int(i / print_interval)
+                interval = int(i / iterations)
                 avg_interval_loss = sum(interval_losses) / len(interval_losses)
-                m = "Interval ({}/{}) average loss: {:.4f}\n".format(interval, print_interval, avg_interval_loss)
+                m = "Interval ({}/{}) average loss: {:.4f}".format(interval, print_interval, avg_interval_loss)
                 tqdm.write(m)
                 interval_losses = []
         
@@ -70,8 +70,7 @@ class Coach:
 #             attns.append(attn)
         
         self.dec_optim.step()
-        
-        loss /= target_batch.shape[1]
+        loss = loss / target_batch.shape[1]
         loss.backward()
 
 #         return loss.item(), att
