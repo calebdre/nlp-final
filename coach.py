@@ -23,7 +23,7 @@ class Coach:
         iterations = int(iterations / batch_size)
         print_interval = int(print_interval / batch_size)
         
-        for i in tqdm(range(1, iterations+1), desc = "Training Iterations", unit = "batch"):
+        for i in tqdm(range(1, iterations+1), desc = "Training Iterations", unit = " batch"):
             input_batch, target_batch = self.lang_pair.get_rand_batch(size = batch_size)
             encoder_out, encoder_hidden = self.train_encoder(input_batch)
 #             loss, attns = self.train_decoder(target_batch, encoder_hidden, encoder_out)
@@ -48,9 +48,10 @@ class Coach:
         num_intervals = iterations / print_interval
         
         print("Fetching batches...\n")
-        batches = self.lang_pair.get_all_as_batches(size = batch_size)
-        for epoch in tqdm(range(num_epochs), desc = "Epochs", unit = "epoch", leave = False):
-            for i, (input_batch, target_batch) in enumerate(tqdm(batches, leave = False, desc = "Batches", unit = "batch")):
+        batches = self.lang_pair.batchify(size = batch_size)
+        
+        for epoch in tqdm(range(num_epochs), desc = "Epochs", unit = " epoch", leave = False):
+            for i, (input_batch, target_batch) in enumerate(tqdm(batches, leave = False, desc = "Batches", unit = " batch")):
                 encoder_out, encoder_hidden = self.train_encoder(input_batch)
 #             loss, attns = self.train_decoder(target_batch, encoder_hidden, encoder_out)
                 loss = self.train_decoder(target_batch, encoder_hidden, encoder_out)

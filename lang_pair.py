@@ -44,6 +44,43 @@ class LangPair:
         
         return None
     
+    def batchify(self, size = 32):
+        combinations = {}
+        for l1, l2 in zip(self.lang1, self.lang2):
+            t = "{} {}".format(len(l1), len(l2))
+            
+            l1 = torch.tensor(l1, dtype=torch.long, device = self.device)
+            l2 = torch.tensor(l2, dtype=torch.long, device = self.device)
+            
+            if t in combinations.keys():
+                combinations[t].append((l1,l2))
+            else:
+                combinations[t] = [(l1,l2)]
+        
+        batches = []
+        for key in combinations:
+            comb = combinations[key]
+            
+            s1s = [s[0] for s in comb]
+            s2s = [s[1] for s in comb]
+            
+            s = list(zip(s1s, s2s))
+            random.shuffle(s)
+            s1s, s2s = zip(*s)
+            
+            s1s, s2s = torch.stack(s1s), torch.stack(s2s)
+            comb_length = s1s.shape[0]
+            if comb_length >= size:
+                num_comb_batches = int(comb_length / size)
+                for i in range(1, num_comb_batches):
+                    batched_s1 = s1s[(i-1) * size:i * size]
+                    batched_s2 = s2s[(i-1) * size:i * size]
+                    
+                    batches.append((batched_s1, batched_s2))
+
+        random.shuffle(batches)
+        return batches
+    
     def get_rand_batch(self, size = 32):
         sent_idxs = random.choices(range(self.data_len), k =size)
         sents = [self.get_sent(idx) for idx in sent_idxs]
