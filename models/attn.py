@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 """
 [Effective Approaches to Attention-based Neural Machine Translation by Luong et al.](https://arxiv.org/pdf/1508.04025.pdf) describe a few more attention models that offer improvements and simplifications. They describe a few "global attention" models, the distinction between them being the way the attention scores are calculated.
 
@@ -17,6 +18,8 @@ class Attn(nn.Module):
         self.method = method
         self.hidden_size = hidden_size
         
+        self.cat = nn.Linear(hidden_size * 2, hidden_size)
+        
         if self.method == 'general':
             self.score = self.score_general
             self.attn = nn.Linear(self.hidden_size, hidden_size)
@@ -30,25 +33,21 @@ class Attn(nn.Module):
             self.score = self.score_dot
 
     def forward(self, hidden, encoder_outputs):
-        """
-        First we calculate a set of attention weights. 
-        Calculating the attention weights is done with another feed-forward layer attn, using the decoder's input and hidden state as inputs.
+        hidden = hidden.view(hidden.shape[0],  1, -1)
+        encoder_outputs = encoder_outputs.transpose(1, 2)
         
-        These will be multiplied by the encoder output vectors to create a weighted combination. 
-        The result (called attn_applied in the code) should contain information about that specific part of the input sequence, and thus help the decoder choose the right output words.
-        """ 
-
-
+        attn_weights = self.score(hidden, encoder_outputs)
+        attn_weights = F.softmax(attn_weights, dim = 1)
+        context = encoder_outputs @ attn_weights.transpose(1,2)
         
-        # Create variable to store attention energies
-
-        # For each batch of encoder outputs
-        # Calculate energy for each encoder output
+        context = context.squeeze()
+        hidden = hidden.squeeze()
         
-        # Normalize energies to weights in range 0 to 1, resize to 1 x B x S
+        applied = torch.cat((hidden, context), 1)
+        applied = self.cat(applied)
+        applied = torch.tanh(applied)
         
-        # Return context vectors
-        return None
+        return applied, attn_weights
     
     # "dot, a simple dot product between the states"
     def score_dot(self, hidden, enc_out):

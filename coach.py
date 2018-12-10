@@ -25,7 +25,6 @@ class Coach:
         
         for i in tqdm(range(1, iterations+1), desc = "Training Iterations", unit = "batch"):
             input_batch, target_batch = self.lang_pair.get_rand_batch(size = batch_size)
-            
             encoder_out, encoder_hidden = self.train_encoder(input_batch)
 #             loss, attns = self.train_decoder(target_batch, encoder_hidden, encoder_out)
             loss = self.train_decoder(target_batch, encoder_hidden, encoder_out)
@@ -34,8 +33,9 @@ class Coach:
             
             if i % print_interval == 0:
                 interval = int(i / iterations)
+                total_intervals = int(iterations / print_interval)
                 avg_interval_loss = sum(interval_losses) / len(interval_losses)
-                m = "Interval ({}/{}) average loss: {:.4f}".format(interval, print_interval, avg_interval_loss)
+                m = "Interval ({}/{}) average loss: {:.4f}".format(interval, total_intervals, avg_interval_loss)
                 tqdm.write(m)
                 interval_losses = []
         
