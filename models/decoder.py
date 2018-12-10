@@ -21,6 +21,3 @@ class Decoder(nn.Module):
         output = self.out(inner_rep)
         output = F.log_softmax(output, dim = 1)
         return output, hidden
-
-    def init_hiden(self):
-        return torch.zeros(self.batch_size, self.hidden_size)

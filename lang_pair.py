@@ -3,7 +3,7 @@ import torch
 import collections
 
 class LangPair:
-    def __init__(self, lang1, sos_idx1, lang2, sos_idx2, debug = False):
+    def __init__(self, lang1, sos_idx1, lang2, sos_idx2, debug = False, device = torch.device("cpu")):
         self.lang1 = lang1
         self.sos1 = sos_idx1
         
@@ -11,6 +11,7 @@ class LangPair:
         self.sos2 = sos_idx2
         
         self.debug = debug
+        self.device = device
         
         self.data_len = len(lang1) - 1
         self.lang1_sent_lengths = list(set([len(sent) for sent in lang1]))
@@ -21,8 +22,8 @@ class LangPair:
         s2 = [self.sos2] + self.lang2[n]
         
         return (
-            torch.tensor(s1, dtype=torch.long),
-            torch.tensor(s2, dtype=torch.long)
+            torch.tensor(s1, dtype=torch.long, device = self.device),
+            torch.tensor(s2, dtype=torch.long, device = self.device)
         )
     
     def get_rand_sent(self, lengths, max_iters = 100):

@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import torch.nn as nn
 
 class Coach:
-    def __init__(self, lang_pair, encoder, enc_optimizer, decoder, dec_optimizer, loss_fn):
+    def __init__(self, lang_pair, encoder, enc_optimizer, decoder, dec_optimizer, loss_fn, device = torch.device("cpu")):
         self.lang_pair = lang_pair
         
         self.encoder = encoder
@@ -15,6 +15,7 @@ class Coach:
         self.dec_optim = dec_optimizer
         
         self.loss_fn = loss_fn
+        self.device = device
     
     def train(self, iterations = 75000, print_interval = 1500, learning_rate = .01, batch_size = 32):
         losses = []
@@ -34,7 +35,8 @@ class Coach:
             if i % print_interval == 0:
                 interval = int(i / print_interval)
                 avg_interval_loss = sum(interval_losses) / len(interval_losses)
-                print("Interval {}/{}:\tAverage Loss: {:.4f}\n".format(interval, print_interval, avg_interval_loss))
+                m = "Interval ({}/{}) average loss: {:.4f}\n".format(interval, print_interval, avg_interval_loss)
+                tqdm.write(m)
                 interval_losses = []
         
         return losses
@@ -43,7 +45,7 @@ class Coach:
         self.enc_optim.zero_grad()
         
         batch_size, input_len = input_batch.shape
-        outs = torch.zeros(batch_size, input_len, self.encoder.output_size)
+        outs = torch.zeros(batch_size, input_len, self.encoder.output_size, device = self.device)
         
         for i in range(input_len):
             out, hidden = self.encoder(input_batch[:, i])
