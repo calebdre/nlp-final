@@ -6,14 +6,17 @@ class Vocab:
         
         vocab.append("<SOS>")
         self.sos_idx = len(vocab) - 1
+        
         vocab.append("<EOS>")
         self.eos_idx = len(vocab) - 1
+        
         vocab.append("<PAD>")
         self.pad_idx = len(vocab) - 1
         
         self.data = data
         self.idx_token = vocab
         self.token_idx = dict(zip(vocab, range(0,len(vocab))))
+        
         return self
     
     @property

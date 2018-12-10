@@ -26,6 +26,9 @@ class LangPair:
             torch.tensor(s2, dtype=torch.long, device = self.device)
         )
     
+    def get_sents(self, ns):
+        return [self.get_sent(n) for n in ns]
+    
     def get_rand_sent(self, lengths, max_iters = 100):
         if not isinstance(lengths, collections.Iterable):
             raise "'lengths' must be a 2-element iterable"
@@ -62,3 +65,26 @@ class LangPair:
         batch = pad_sequence(batch, padding_value = pad_idx, batch_first = True)
         
         return batch, lengths
+    
+    def get_all_as_batches(self, size = 32):
+        num_batches = int(self.data_len / size)
+        batches = [self.get_sents(range((i - 1) * size, i * size)) for i in range(1, num_batches)]
+        
+        prepped_batches = []
+        for batch in batches:
+            s1s = [b[0] for b in batch]
+            s2s = [b[1] for b in batch]
+            
+            s1s, s1lens = self.prepare_batch(s1s, self.lang1_vocab.pad_idx)
+            s2s, s2lens = self.prepare_batch(s2s, self.lang2_vocab.pad_idx)
+            
+            # shuffle
+            s = list(zip(s1s, s2s))
+            random.shuffle(s)
+            s1s, s2s = zip(*s)
+            s1s, s2s = torch.stack(s1s), torch.stack(s2s)
+            
+            prepped_batches.append((s1s, s2s))
+            
+        random.shuffle(prepped_batches)
+        return prepped_batches

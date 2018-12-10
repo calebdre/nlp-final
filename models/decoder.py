@@ -26,8 +26,9 @@ class Decoder(nn.Module):
         if hasattr(self, "attn"):
             attn_applied, weights = self.attn(inner_rep, encoder_out)
             output = self.out(attn_applied)
+            return output, hidden, weights
         else:
             output = self.out(inner_rep)
+            output = F.log_softmax(output, dim = 1)
+            return output, hidden
         
-        output = F.log_softmax(output, dim = 1)
-        return output, hidden

@@ -17,7 +17,7 @@ class Coach:
         self.loss_fn = loss_fn
         self.device = device
     
-    def train(self, iterations = 75000, print_interval = 1500, learning_rate = .01, batch_size = 32):
+    def train_random(self, iterations = 75000, print_interval = 1500, learning_rate = .01, batch_size = 32):
         losses = []
         interval_losses = []
         iterations = int(iterations / batch_size)
@@ -41,12 +41,37 @@ class Coach:
         
         return losses
     
-    def train_encoder(self, input_batch, input_batch_lengths):
+    def train_epochs(self, num_epochs = 10, print_interval = 1500, learning_rate = .01, batch_size = 32):
+        losses = []
+        interval_losses = []
+        iterations = self.lang_pair.data_len * num_epochs
+        num_intervals = iterations / print_interval
+        
+        print("Fetching batches...\n")
+        batches = self.lang_pair.get_all_as_batches(size = batch_size)
+        for epoch in tqdm(range(num_epochs), desc = "Epochs", unit = "epoch", leave = False):
+            for i, (input_batch, target_batch) in enumerate(tqdm(batches, leave = False, desc = "Batches", unit = "batch")):
+                encoder_out, encoder_hidden = self.train_encoder(input_batch)
+#             loss, attns = self.train_decoder(target_batch, encoder_hidden, encoder_out)
+                loss = self.train_decoder(target_batch, encoder_hidden, encoder_out)
+                losses.append(loss)
+                interval_losses.append(loss)
+                
+                if epoch % print_interval == 0:
+                    interval = int(epoch / print_interval)
+                    avg_interval_loss = sum(interval_losses) / len(interval_losses)
+                    
+                    m = "Epoch [{}/{}]\tInterval [{}/{}]\t Average Loss: {}".format(
+                       epoch, num_epochs, interval, num_intervals, avg_interval_loss 
+                    )
+                    interval_losses = []
+    
+    def train_encoder(self, input_batch):
         self.enc_optim.zero_grad()
         
         batch_size, input_len = input_batch.shape
         outs = torch.zeros(batch_size, input_len, self.encoder.output_size, device = self.device)
-        hidden = self.encoder.init_hidden()
+        hidden = self.encoder.init_hidden().to(self.device)
         for i in range(input_len):
             out, hidden = self.encoder(input_batch[:, i], hidden)
             outs[:, i] = out[:, 0]
@@ -65,14 +90,15 @@ class Coach:
         for i in range(target_len):
             dec_input = target_batch[:, i]
             out, hidden = self.decoder(dec_input, hidden, encoder_out)
+#             out, hidden, attn_weights = self.decoder(dec_input, hidden, encoder_out)
             
             loss += self.loss_fn(out, target_batch[:, i])
-#             attns.append(attn)
+#             attns.append(attn_weights)
         
         self.dec_optim.step()
         loss = loss / target_batch.shape[1]
         loss.backward()
 
-#         return loss.item(), att
+#         return loss.item(), attns
         return loss.item()
     
