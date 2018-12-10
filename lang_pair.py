@@ -54,7 +54,7 @@ class LangPair:
         s1s = pad_sequence(s1s, padding_value = self.lang1_vocab.pad_idx, batch_first = True)
         s2s = pad_sequence(s2s, padding_value = self.lang2_vocab.pad_idx, batch_first = True)
         
-        return s1s, s1s_lengths, s2s, s2s_lengths
+        return s1s, s2s,
 
     def get_all_as_batches(self, size = 32):
         num_batches = int(self.data_len / size)
