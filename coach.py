@@ -54,7 +54,7 @@ class Coach:
                 tqdm.write(m)
                 interval_losses = []
         
-        return losses
+        return losses, batch_attentions
     
     def train_epochs(self, num_epochs = 10, print_interval = 1500, learning_rate = .01, batch_size = 32, percent_of_data = .6):
         losses = []
