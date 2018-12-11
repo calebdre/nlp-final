@@ -63,7 +63,7 @@ class Coach:
         
         print("Fetching batches...\n")
         batches = self.lang_pair.batchify(size = batch_size)
-        batches = batches[:int(len(batches) * percent_of_data)]
+        batches = random.sample(batches, k = int(len(batches) * percent_of_data))
         
         for epoch in tqdm(range(num_epochs), desc = "Epochs", unit = " epoch", leave = False):
             for i, (input_batch, target_batch) in enumerate(tqdm(batches, leave = False, desc = "Batches", unit = " batch")):
@@ -113,8 +113,8 @@ class Coach:
         
         for i in range(target_len):
             dec_input = target_batch[:, i]
-            out, hidden = self.decoder(dec_input, hidden, encoder_out)
-#             out, hidden, attn_weights = self.decoder(dec_input, hidden, encoder_out)
+#             out, hidden = self.decoder(dec_input, hidden, encoder_out)
+            out, hidden, attn_weights = self.decoder(dec_input, hidden, encoder_out)
             if len(out.shape) == 1:
                 out = out.view(1, -1)
             

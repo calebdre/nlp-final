@@ -20,14 +20,13 @@ class Decoder(nn.Module):
         embedded = embedded.view(batch_input.shape[0], 1, -1) # gru expects [batch_size x seq_len x features]
         
         inner_rep, hidden = self.gru(embedded, hidden)
-        inner_rep = inner_rep.squeeze()
         
         if hasattr(self, "attn"):
             attn_applied, weights = self.attn(inner_rep, encoder_out)
             output = self.out(attn_applied)
             return output, hidden, weights
         else:
-            output = self.out(inner_rep)
+            output = self.out(inner_rep.squeeze())
             dim = 0 if len(output.shape) == 1 else 1
             output = F.log_softmax(output, dim = dim)
             return output, hidden

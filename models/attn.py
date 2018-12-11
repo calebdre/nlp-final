@@ -33,7 +33,6 @@ class Attn(nn.Module):
             self.score = self.score_dot
 
     def forward(self, hidden, encoder_outputs):
-        hidden = hidden.view(hidden.shape[0],  1, -1)
         encoder_outputs = encoder_outputs.transpose(1, 2)
         
         attn_weights = self.score(hidden, encoder_outputs)
@@ -42,8 +41,8 @@ class Attn(nn.Module):
         
         context = context.squeeze()
         hidden = hidden.squeeze()
-        
-        applied = torch.cat((hidden, context), 1)
+        catted_dim = 0 if len(hidden.shape) == 1 else 1
+        applied = torch.cat((hidden, context), catted_dim)
         applied = self.cat(applied)
         applied = torch.tanh(applied)
         
