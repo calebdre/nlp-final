@@ -55,7 +55,7 @@ class Coach:
         
         return losses
     
-    def train_epochs(self, num_epochs = 10, print_interval = 1500, learning_rate = .01, batch_size = 32):
+    def train_epochs(self, num_epochs = 10, print_interval = 1500, learning_rate = .01, batch_size = 32, percent_of_data = .6):
         losses = []
         interval_losses = []
         iterations = self.lang_pair.data_len * num_epochs
@@ -63,6 +63,7 @@ class Coach:
         
         print("Fetching batches...\n")
         batches = self.lang_pair.batchify(size = batch_size)
+        batches = batches[:int(len(batches) * percent_of_data)]
         
         for epoch in tqdm(range(num_epochs), desc = "Epochs", unit = " epoch", leave = False):
             for i, (input_batch, target_batch) in enumerate(tqdm(batches, leave = False, desc = "Batches", unit = " batch")):
