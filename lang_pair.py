@@ -47,15 +47,18 @@ class LangPair:
     def batchify(self, size = 32):
         combinations = {}
         for l1, l2 in zip(self.lang1, self.lang2):
-            t = "{} {}".format(len(l1), len(l2))
+            key = "{} {}".format(len(l1), len(l2))
             
             l1 = torch.tensor(l1, dtype=torch.long, device = self.device)
+            
+            l2 = [self.lang2_vocab.sos_idx] + l2
             l2 = torch.tensor(l2, dtype=torch.long, device = self.device)
             
-            if t in combinations.keys():
-                combinations[t].append((l1,l2))
+            
+            if key in combinations.keys():
+                combinations[key].append((l1,l2))
             else:
-                combinations[t] = [(l1,l2)]
+                combinations[key] = [(l1,l2)]
         
         batches = []
         for key in combinations:

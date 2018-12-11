@@ -3,6 +3,7 @@ import torch
 from torch import optim
 import torch.nn.functional as F
 import torch.nn as nn
+import random
 
 class Coach:
     def __init__(self, lang_pair, encoder, enc_optimizer, decoder, dec_optimizer, loss_fn, device = torch.device("cpu")):
@@ -23,15 +24,18 @@ class Coach:
         iterations = int(iterations / batch_size)
         print_interval = int(print_interval / batch_size)
         
-        for i in tqdm(range(1, iterations+1), desc = "Training Iterations", unit = " batch"):
-            input_batch, target_batch = self.lang_pair.get_rand_batch(size = batch_size)
+        print("Fetching batches...\n")
+        batches = self.lang_pair.batchify(size = batch_size)
+        batches = random.choices(batches, k = iterations)
+        
+        for i, (input_batch, target_batch) in enumerate(tqdm(batches, desc = "Training Iterations", unit = " batch")):
             encoder_out, encoder_hidden = self.train_encoder(input_batch)
 #             loss, attns = self.train_decoder(target_batch, encoder_hidden, encoder_out)
             loss = self.train_decoder(target_batch, encoder_hidden, encoder_out)
             losses.append(loss)
             interval_losses.append(loss)
             
-            if i % print_interval == 0:
+            if i > 0 and i % print_interval == 0:
                 interval = int(i / print_interval)
                 total_intervals = int(iterations / print_interval)
                 avg_interval_loss = sum(interval_losses) / len(interval_losses)
