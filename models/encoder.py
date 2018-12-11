@@ -2,14 +2,14 @@ import torch
 import torch.nn as nn
 
 class Encoder(nn.Module):
-    def __init__(self, input_vocab_size, hidden_size, n_layers = 1, dropout= 0):
+    def __init__(self, input_vocab_size, embed_size, hidden_size, n_layers = 1, dropout= 0):
         super(Encoder, self).__init__()
         
         self.hidden_size = hidden_size
         self.n_layers = n_layers
         
-        self.embedding = nn.Embedding(input_vocab_size, hidden_size)
-        self.gru = nn.GRU(hidden_size, hidden_size, n_layers, dropout=dropout, batch_first = True, bidirectional=True)
+        self.embedding = nn.Embedding(input_vocab_size, embed_size)
+        self.gru = nn.GRU(embed_size, hidden_size, n_layers, dropout=dropout, batch_first = True, bidirectional=True)
 
     def forward(self, batch_input, hidden):
         embedded = self.embedding(batch_input)
