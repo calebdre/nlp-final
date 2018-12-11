@@ -77,13 +77,14 @@ class Coach:
         
         batch_size, input_len = input_batch.shape
         outs = torch.zeros(batch_size, input_len, self.encoder.output_size, device = self.device)
-        hidden = self.encoder.init_hidden().to(self.device)
+        hidden = self.encoder.init_hidden(batch_size).to(self.device)
+        
         for i in range(input_len):
             out, hidden = self.encoder(input_batch[:, i], hidden)
             outs[:, i] = out[:, 0]
             
         self.enc_optim.step()
-        return outs, hidden
+        return outs, hidden[:self.encoder.n_layers]
     
     def train_decoder(self, target_batch, encoder_hidden, encoder_out):
         self.dec_optim.zero_grad()
