@@ -95,6 +95,7 @@ class Coach:
                     )
                     tqdm.write(m)
                     interval_losses = []
+        return losses, batch_attentions
     
     def train_encoder(self, input_batch):
         batch_size, input_len = input_batch.shape

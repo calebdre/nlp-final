@@ -92,7 +92,7 @@ print("***************\nTraining w/o attention\n***************\n")
 losses, _ = coach.train_epochs(**epoch_training_params)
 
 print("\n\n***************\nTraining with attention\n***************\n")
-attn_losses, attns = coach.train_epochs(**epochtraining_params)
+attn_losses, attns = coach_attn.train_epochs(**epochtraining_params)
 
 info = {
     "coach": coach,

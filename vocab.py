@@ -13,6 +13,9 @@ class Vocab:
         vocab.append("<PAD>")
         self.pad_idx = len(vocab) - 1
         
+        vocab.append("<UNK>")
+        self.unk_idx = len(vocab) - 1
+        
         self.data = data
         self.idx_token = vocab
         self.token_idx = dict(zip(vocab, range(0,len(vocab))))

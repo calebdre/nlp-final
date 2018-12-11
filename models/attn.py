@@ -36,7 +36,7 @@ class Attn(nn.Module):
         encoder_outputs = encoder_outputs.transpose(1, 2)
         
         attn_weights = self.score(hidden, encoder_outputs)
-        attn_weights = F.softmax(attn_weights, dim = 1)
+        attn_weights = F.log_softmax(attn_weights, dim = 1)
         context = encoder_outputs @ attn_weights.transpose(1,2)
         
         context = context.squeeze()
