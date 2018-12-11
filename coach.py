@@ -85,8 +85,8 @@ class Coach:
                 interval_losses.append(loss)
                 batch_attentions.append(attns)
                 
-                if epoch % print_interval == 0:
-                    interval = int(epoch / print_interval)
+                if i > 0 and i % print_interval == 0:
+                    interval = int(i / print_interval)
                     avg_interval_loss = sum(interval_losses) / len(interval_losses)
                     
                     m = "Epoch [{}/{}]\tInterval [{}/{}]\t Average Loss: {}".format(

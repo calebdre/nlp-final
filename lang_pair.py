@@ -46,7 +46,7 @@ class LangPair:
     
     def batchify(self, size = 32):
         combinations = {}
-        for l1, l2 in zip(self.lang1, self.lang2):
+        for i, (l1, l2) in enumerate(zip(self.lang1, self.lang2)):
             key = "{} {}".format(len(l1), len(l2))
             
             l1 = torch.tensor(l1, dtype=torch.long, device = self.device)
@@ -61,7 +61,7 @@ class LangPair:
                 combinations[key] = [(l1,l2)]
         
         batches = []
-        for key in combinations:
+        for key in combinations.keys():
             comb = combinations[key]
             
             s1s = [s[0] for s in comb]
@@ -75,7 +75,7 @@ class LangPair:
             comb_length = s1s.shape[0]
             if comb_length >= size:
                 num_comb_batches = int(comb_length / size)
-                for i in range(1, num_comb_batches):
+                for i in range(1, num_comb_batches+1):
                     batched_s1 = s1s[(i-1) * size:i * size]
                     batched_s2 = s2s[(i-1) * size:i * size]
                     
