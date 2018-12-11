@@ -29,9 +29,19 @@ class Coach:
         batches = random.choices(batches, k = iterations)
         
         for i, (input_batch, target_batch) in enumerate(tqdm(batches, desc = "Training Iterations", unit = " batch")):
+            self.dec_optim.zero_grad()
+            self.enc_optim.zero_grad()
+                
             encoder_out, encoder_hidden = self.train_encoder(input_batch)
 #             loss, attns = self.train_decoder(target_batch, encoder_hidden, encoder_out)
             loss = self.train_decoder(target_batch, encoder_hidden, encoder_out)
+    
+            loss = loss / target_batch.shape[1]
+            loss.backward()
+                
+            self.dec_optim.step()
+            self.enc_optim.step()
+
             losses.append(loss)
             interval_losses.append(loss)
             
@@ -56,9 +66,19 @@ class Coach:
         
         for epoch in tqdm(range(num_epochs), desc = "Epochs", unit = " epoch", leave = False):
             for i, (input_batch, target_batch) in enumerate(tqdm(batches, leave = False, desc = "Batches", unit = " batch")):
+                self.dec_optim.zero_grad()
+                self.enc_optim.zero_grad()
+                
                 encoder_out, encoder_hidden = self.train_encoder(input_batch)
 #             loss, attns = self.train_decoder(target_batch, encoder_hidden, encoder_out)
                 loss = self.train_decoder(target_batch, encoder_hidden, encoder_out)
+    
+                loss = loss / target_batch.shape[1]
+                loss.backward()
+                
+                self.dec_optim.step()
+                self.enc_optim.step()
+
                 losses.append(loss)
                 interval_losses.append(loss)
                 
@@ -73,8 +93,6 @@ class Coach:
                     interval_losses = []
     
     def train_encoder(self, input_batch):
-        self.enc_optim.zero_grad()
-        
         batch_size, input_len = input_batch.shape
         outs = torch.zeros(batch_size, input_len, self.encoder.output_size, device = self.device)
         hidden = self.encoder.init_hidden(batch_size).to(self.device)
@@ -82,12 +100,10 @@ class Coach:
         for i in range(input_len):
             out, hidden = self.encoder(input_batch[:, i], hidden)
             outs[:, i] = out[:, 0]
-            
-        self.enc_optim.step()
+
         return outs, hidden[:self.encoder.n_layers]
     
     def train_decoder(self, target_batch, encoder_hidden, encoder_out):
-        self.dec_optim.zero_grad()
         loss = 0
 #         attns = []
         
@@ -103,11 +119,6 @@ class Coach:
             
             loss += self.loss_fn(out, target_batch[:, i])
 #             attns.append(attn_weights)
-        
-        self.dec_optim.step()
-        loss = loss / target_batch.shape[1]
-        loss.backward()
-
-#         return loss.item(), attns
-        return loss.item()
+#         return loss, attns
+        return loss
     
