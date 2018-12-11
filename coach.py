@@ -65,6 +65,7 @@ class Coach:
                     m = "Epoch [{}/{}]\tInterval [{}/{}]\t Average Loss: {}".format(
                        epoch, num_epochs, interval, num_intervals, avg_interval_loss 
                     )
+                    tqdm.write(m)
                     interval_losses = []
     
     def train_encoder(self, input_batch):
