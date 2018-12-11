@@ -20,6 +20,7 @@ class Coach:
     
     def train_random(self, iterations = 75000, print_interval = 1500, learning_rate = .01, batch_size = 32):
         losses = []
+        batch_attentions = []
         interval_losses = []
         iterations = int(iterations / batch_size)
         print_interval = int(print_interval / batch_size)
@@ -33,8 +34,7 @@ class Coach:
             self.enc_optim.zero_grad()
                 
             encoder_out, encoder_hidden = self.train_encoder(input_batch)
-#             loss, attns = self.train_decoder(target_batch, encoder_hidden, encoder_out)
-            loss = self.train_decoder(target_batch, encoder_hidden, encoder_out)
+            loss, attns = self.train_decoder(target_batch, encoder_hidden, encoder_out)
     
             loss = loss / target_batch.shape[1]
             loss.backward()
@@ -44,6 +44,7 @@ class Coach:
 
             losses.append(loss)
             interval_losses.append(loss)
+            batch_attentions.append(attns)
             
             if i > 0 and i % print_interval == 0:
                 interval = int(i / print_interval)
@@ -57,6 +58,7 @@ class Coach:
     
     def train_epochs(self, num_epochs = 10, print_interval = 1500, learning_rate = .01, batch_size = 32, percent_of_data = .6):
         losses = []
+        batch_attentions = []
         interval_losses = []
         iterations = self.lang_pair.data_len * num_epochs
         num_intervals = iterations / print_interval
@@ -71,9 +73,8 @@ class Coach:
                 self.enc_optim.zero_grad()
                 
                 encoder_out, encoder_hidden = self.train_encoder(input_batch)
-#             loss, attns = self.train_decoder(target_batch, encoder_hidden, encoder_out)
-                loss = self.train_decoder(target_batch, encoder_hidden, encoder_out)
-    
+                loss, attns = self.train_decoder(target_batch, encoder_hidden, encoder_out)
+                
                 loss = loss / target_batch.shape[1]
                 loss.backward()
                 
@@ -82,6 +83,7 @@ class Coach:
 
                 losses.append(loss)
                 interval_losses.append(loss)
+                batch_attentions.append(attns)
                 
                 if epoch % print_interval == 0:
                     interval = int(epoch / print_interval)
@@ -106,20 +108,23 @@ class Coach:
     
     def train_decoder(self, target_batch, encoder_hidden, encoder_out):
         loss = 0
-#         attns = []
+        attns = []
         
         target_len = target_batch.shape[1]
         hidden = encoder_hidden
         
         for i in range(target_len):
             dec_input = target_batch[:, i]
-#             out, hidden = self.decoder(dec_input, hidden, encoder_out)
-            out, hidden, attn_weights = self.decoder(dec_input, hidden, encoder_out)
+            if self.decoder.has_attention:
+                out, hidden, attn_weights = self.decoder(dec_input, hidden, encoder_out)
+                attns.append(attn_weights)
+            else:
+                out, hidden = self.decoder(dec_input, hidden, encoder_out)
+                
             if len(out.shape) == 1:
                 out = out.view(1, -1)
             
             loss += self.loss_fn(out, target_batch[:, i])
-#             attns.append(attn_weights)
-#         return loss, attns
-        return loss
+            
+        return loss, attns
     

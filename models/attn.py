@@ -42,6 +42,7 @@ class Attn(nn.Module):
         context = context.squeeze()
         hidden = hidden.squeeze()
         catted_dim = 0 if len(hidden.shape) == 1 else 1
+        
         applied = torch.cat((hidden, context), catted_dim)
         applied = self.cat(applied)
         applied = torch.tanh(applied)

@@ -31,3 +31,6 @@ class Decoder(nn.Module):
             output = F.log_softmax(output, dim = dim)
             return output, hidden
         
+    @property
+    def has_attention(self):
+        return hasattr(self, "attn")
