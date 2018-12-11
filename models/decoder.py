@@ -28,8 +28,7 @@ class Decoder(nn.Module):
             return output, hidden, weights
         else:
             output = self.out(inner_rep)
-            if len(output.shape) == 1:
-                output = output.view(1, -1)
-            output = F.softmax(output, dim = 1)
+            dim = 0 if len(output.shape) == 1 else 1
+            output = F.log_softmax(output, dim = dim)
             return output, hidden
         

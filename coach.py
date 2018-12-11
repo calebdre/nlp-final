@@ -98,6 +98,8 @@ class Coach:
             dec_input = target_batch[:, i]
             out, hidden = self.decoder(dec_input, hidden, encoder_out)
 #             out, hidden, attn_weights = self.decoder(dec_input, hidden, encoder_out)
+            if len(out.shape) == 1:
+                out = out.view(1, -1)
             
             loss += self.loss_fn(out, target_batch[:, i])
 #             attns.append(attn_weights)
