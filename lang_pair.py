@@ -77,6 +77,8 @@ class LangPair:
                     batched_s2 = s2s[(i-1) * size:i * size]
                     
                     batches.append((batched_s1, batched_s2))
+            else:
+                batches.append((s1s, s2s))
 
         random.shuffle(batches)
         return batches
