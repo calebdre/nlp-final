@@ -17,7 +17,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 with open("vi_en_lang_pair.pkl", "rb") as f:
     vi_en_pair = torch.load(f)
-    
+
+vi_en_pair.device = device
 batch_size = 25
 learning_rate = .01
 hidden_size = 150
@@ -59,7 +60,8 @@ coach_params = {
     "enc_optimizer": enc_optimizer, 
     "decoder": decoder, 
     "dec_optimizer": dec_optimizer, 
-    "loss_fn": loss_fn
+    "loss_fn": loss_fn,
+    "device": device
 }
 
 coach_attn_params = {
@@ -73,34 +75,36 @@ coach_attn = Coach(**coach_attn_params)
 
 rand_training_params = {
     "learning_rate": learning_rate,
-    "iterations": 10,
-    "print_interval": 10000,
+    "iterations": 200000,
+    "print_interval": 25000,
     "batch_size": batch_size
 }
 
 epoch_training_params = {
-    "num_epochs": 2,
-    "print_interval": 5000,
+    "num_epochs": 10,
+    "print_interval": 10000,
     "learning_rate": learning_rate,
-    "batch_size": batch_size
+    "batch_size": batch_size,
+    "percent_of_data": 1
 }
 
 print("***************\nTraining w/o attention\n***************\n")
-losses, _ = coach.train_random(**rand_training_params)
+losses, _ = coach.train_epochs(**epoch_training_params)
 
 print("\n\n***************\nTraining with attention\n***************\n")
-attn_losses, attns = coach.train_random(**rand_training_params)
+attn_losses, attns = coach.train_epochs(**epochtraining_params)
 
 info = {
     "coach": coach,
     "attn_coach": coach_attn,
     "losses": losses,
     "attn_losses":attn_losses,
+    "attns": attns,
     "params": {
         "enc": enc_params,
         "dec": dec_params,
         "attn": attn_params,
-        "training": rand_training_params,
+        "training": epoch_training_params,
         "hidden_size": hidden_size,
         "batch_size": batch_size,
         "learning_rate": learning_rate,

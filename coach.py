@@ -65,10 +65,11 @@ class Coach:
         
         print("Fetching batches...\n")
         batches = self.lang_pair.batchify(size = batch_size)
-        batches = random.sample(batches, k = int(len(batches) * percent_of_data))
         
         for epoch in tqdm(range(num_epochs), desc = "Epochs", unit = " epoch", leave = False):
-            for i, (input_batch, target_batch) in enumerate(tqdm(batches, leave = False, desc = "Batches", unit = " batch")):
+            sampled_batches = random.sample(batches, k = int(len(batches) * percent_of_data))
+            
+            for i, (input_batch, target_batch) in enumerate(tqdm(sampled_batches, leave = False, desc = "Batches", unit = " batch")):
                 self.dec_optim.zero_grad()
                 self.enc_optim.zero_grad()
                 
