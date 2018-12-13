@@ -139,6 +139,8 @@ def main(
     print("Saving...")
     with open(save_filename, "wb") as f:
         torch.save(info, f)
+    
+    return losses, attns, info
 
 if __name__ == "__main__" :
     main()
