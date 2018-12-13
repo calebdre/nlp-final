@@ -1,4 +1,4 @@
-from tqdm import tqdm
+from tqdm import tqdm, tqdm_notebook
 import torch
 from torch import optim
 import torch.nn.functional as F
@@ -27,9 +27,8 @@ class Coach:
         
         print("Fetching batches...\n")
         batches = self.lang_pair.batchify(size = batch_size)
-        batches = random.choices(batches, k = iterations)
-        
-        for i, (input_batch, target_batch) in enumerate(tqdm(batches, desc = "Training Iterations", unit = " batch")):
+        batches = random.choices(batches, k = iterations)        
+        for i, (input_batch, target_batch) in enumerate(tqdm_notebook(batches, desc = "Training Iterations", unit = " batch")):
             self.dec_optim.zero_grad()
             self.enc_optim.zero_grad()
                 
@@ -66,10 +65,10 @@ class Coach:
         print("Fetching batches...\n")
         batches = self.lang_pair.batchify(size = batch_size)
         
-        for epoch in tqdm(range(num_epochs), desc = "Epochs", unit = " epoch", leave = False):
+        for epoch in tqdm_notebook(range(num_epochs), desc = "Epochs", unit = " epoch", leave = False):
             sampled_batches = random.sample(batches, k = int(len(batches) * percent_of_data))
             
-            for i, (input_batch, target_batch) in enumerate(tqdm(sampled_batches, leave = False, desc = "Batches", unit = " batch")):
+            for i, (input_batch, target_batch) in enumerate(tqdm_notebook(sampled_batches, leave = False, desc = "Batches", unit = " batch")):
                 self.dec_optim.zero_grad()
                 self.enc_optim.zero_grad()
                 

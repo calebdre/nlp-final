@@ -13,18 +13,23 @@ class Decoder(nn.Module):
         
         if attn is not None:
             self.attn = attn
+            self.attn_projection = nn.Linear(hidden_size * 2, hidden_size)
 
     def forward(self, batch_input, hidden, encoder_out):
         embedded = self.embedding(batch_input)
         embedded = self.dropout(embedded)
         embedded = embedded.view(batch_input.shape[0], 1, -1) # gru expects [batch_size x seq_len x features]
         
+        # 7 x 256
         inner_rep, hidden = self.gru(embedded, hidden)
         
         if hasattr(self, "attn"):
-            attn_applied, weights = self.attn(inner_rep, encoder_out)
-            output = self.out(attn_applied)
-            return output, hidden, weights
+            # 7 x 256 * 2
+            attn, attn_weights = self.attn(inner_rep, encoder_out)
+            attn_applied = self.attn_projection(attn)
+            attn_applied = F.tanh(attn_applied)
+            out = self.out(attn_applied)
+            return out, hidden, attn_weights
         else:
             output = self.out(inner_rep.squeeze())
             dim = 0 if len(output.shape) == 1 else 1

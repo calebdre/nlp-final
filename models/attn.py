@@ -33,25 +33,26 @@ class Attn(nn.Module):
             self.score = self.score_dot
 
     def forward(self, hidden, encoder_outputs):
-        encoder_outputs = encoder_outputs.transpose(1, 2)
+        # given...
+        # input_len -> 6
+        # target_len -> 7
         
-        attn_weights = self.score(hidden, encoder_outputs)
+        # then...
+        # hidden   -> (target_len) 7 x 256
+        # enc_outs -> (input_len)  6 x 256
+        
+                               #  7 x 256 @ 256 x 6        -> 7 x 6
+        attn_weights = self.score(hidden  , encoder_outputs)
         attn_weights = F.log_softmax(attn_weights, dim = 1)
-        context = encoder_outputs @ attn_weights.transpose(1,2)
+
+        #         256 x 6                        @  6 x 7                      -> 256 x 7 (or 7 x 256)
+        context = encoder_outputs.transpose(1,2) @  attn_weights.transpose(1,2)
+        attn = torch.cat([hidden, context], dim = 1)
+        return attn, attn_weights
         
-        context = context.squeeze()
-        hidden = hidden.squeeze()
-        catted_dim = 0 if len(hidden.shape) == 1 else 1
-        
-        applied = torch.cat((hidden, context), catted_dim)
-        applied = self.cat(applied)
-        applied = torch.tanh(applied)
-        
-        return applied, attn_weights
-    
     # "dot, a simple dot product between the states"
     def score_dot(self, hidden, enc_out):
-        return hidden @ enc_out
+        return hidden @ enc_out.transpose(1,2)
     
     # "general, a dot product between the decoder hidden state and a linear transform of the encoder state"
     def score_general(self, hidden, enc_out):

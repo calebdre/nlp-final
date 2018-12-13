@@ -13,105 +13,130 @@ import torch
 import pandas as pd
 import time
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+def main(
+    lang_pair_path = "vi_en_lang_pair.pkl", 
+    hidden_size = 150, 
+    batch_size = 25,
+    learning_rate = .01,
+    embed_size = 300,
+    enc_layers = 1,
+    dec_layers = 1,
+    enc_dropout = 0,
+    dec_dropout = 0,
+    use_attn = False,
+    save_filename = "training_run_{}.pkl".format(int(time.time())),
+    iterations = 200000,
+    print_interval = 25000,
+    num_epochs = None,
+):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-with open("vi_en_lang_pair.pkl", "rb") as f:
-    vi_en_pair = torch.load(f)
+    with open(lang_pair_path, "rb") as f:
+        lang_pair = torch.load(f)
 
-vi_en_pair.device = device
-batch_size = 25
-learning_rate = .01
-hidden_size = 150
-embed_size = 300
+    lang_pair.device = device
 
-enc_params = {
-    "input_vocab_size": vi_en_pair.lang1_vocab.size,
-    "hidden_size": hidden_size,
-    "n_layers": 2,
-    "dropout": .15,
-    "embed_size": embed_size
-}
+    enc_params = {
+        "input_vocab_size": lang_pair.lang1_vocab.size,
+        "hidden_size": hidden_size,
+        "n_layers": enc_layers,
+        "dropout": enc_dropout,
+        "embed_size": embed_size
+    }
 
-dec_params = {
-    "target_vocab_size": vi_en_pair.lang2_vocab.size,
-    "hidden_size": hidden_size,
-    "n_layers": 2,
-    "dropout": .15,
-}
+    dec_params = {
+        "target_vocab_size": lang_pair.lang2_vocab.size,
+        "hidden_size": hidden_size,
+        "n_layers": dec_layers,
+        "dropout": dec_dropout,
+    }
 
-attn_params = {
-    "hidden_size": hidden_size,
-    "method": "dot"
-}
+    attn_params = {
+        "hidden_size": hidden_size,
+        "method": "general"
+    }
 
-attn = Attn(**attn_params).to(device)
-encoder = Encoder(**enc_params).to(device)
-decoder = Decoder(**dec_params).to(device)
-decoder_attn = Decoder(**dec_params, attn = attn).to(device)
+    attn = Attn(**attn_params).to(device)
+    encoder = Encoder(**enc_params).to(device)
+    decoder = Decoder(**dec_params).to(device)
+    decoder_attn = Decoder(**dec_params, attn = attn).to(device)
 
-enc_optimizer = optim.SGD(encoder.parameters(), lr = learning_rate)
-dec_optimizer = optim.SGD(decoder.parameters(), lr = learning_rate)
-dec_attn_optimizer = optim.SGD(decoder_attn.parameters(), lr = learning_rate)
-loss_fn = nn.NLLLoss()
+    enc_optimizer = optim.SGD(encoder.parameters(), lr = learning_rate)
+    dec_optimizer = optim.SGD(decoder.parameters(), lr = learning_rate)
+    dec_attn_optimizer = optim.SGD(decoder_attn.parameters(), lr = learning_rate)
+    loss_fn = nn.NLLLoss()
 
-coach_params = {
-    "lang_pair": vi_en_pair, 
-    "encoder": encoder, 
-    "enc_optimizer": enc_optimizer, 
-    "decoder": decoder, 
-    "dec_optimizer": dec_optimizer, 
-    "loss_fn": loss_fn,
-    "device": device
-}
+    coach_params = {
+        "lang_pair": lang_pair, 
+        "encoder": encoder, 
+        "enc_optimizer": enc_optimizer, 
+        "decoder": decoder, 
+        "dec_optimizer": dec_optimizer, 
+        "loss_fn": loss_fn,
+        "device": device
+    }
 
-coach_attn_params = {
-    **coach_params,
-    "decoder": decoder_attn,
-    "dec_optimizer": dec_attn_optimizer, 
-}
+    coach_attn_params = {
+        **coach_params,
+        "decoder": decoder_attn,
+        "dec_optimizer": dec_attn_optimizer, 
+    }
 
-coach = Coach(**coach_params)
-coach_attn = Coach(**coach_attn_params)
+    rand_training_params = {
+        "learning_rate": learning_rate,
+        "iterations": 200000,
+        "print_interval": 25000,
+        "batch_size": batch_size
+    }
 
-rand_training_params = {
-    "learning_rate": learning_rate,
-    "iterations": 200000,
-    "print_interval": 25000,
-    "batch_size": batch_size
-}
+    epoch_training_params = {
+        "num_epochs": 10,
+        "print_interval": 10000,
+        "learning_rate": learning_rate,
+        "batch_size": batch_size,
+        "percent_of_data": 1
+    }
 
-epoch_training_params = {
-    "num_epochs": 10,
-    "print_interval": 10000,
-    "learning_rate": learning_rate,
-    "batch_size": batch_size,
-    "percent_of_data": 1
-}
-
-print("***************\nTraining w/o attention\n***************\n")
-losses, _ = coach.train_epochs(**epoch_training_params)
-
-print("\n\n***************\nTraining with attention\n***************\n")
-attn_losses, attns = coach_attn.train_epochs(**epochtraining_params)
-
-info = {
-    "coach": coach,
-    "attn_coach": coach_attn,
-    "losses": losses,
-    "attn_losses":attn_losses,
-    "attns": attns,
-    "params": {
+    info = {
+        "use_attn": use_attn,
         "enc": enc_params,
         "dec": dec_params,
-        "attn": attn_params,
         "training": epoch_training_params,
         "hidden_size": hidden_size,
         "batch_size": batch_size,
         "learning_rate": learning_rate,
         "embeding_size": embed_size
     }
-}
 
-print("Saving...")
-with open("training_run_{}.pkl".format(time.time()), "wb") as f:
-    torch.save(info, f)
+    if use_attn:
+        print("***************\nTraining with attention\n***************\n")
+        coach = Coach(**coach_attn_params)
+    else:
+        print("***************\nTraining w/o attention\n***************\n")
+        coach = Coach(**coach_params)
+
+    
+    if num_epochs is not None:
+        train_func = coach.train_epochs
+        params = epoch_training_params
+        params["num_epochs"] = num_epochs
+    else:
+        train_func = coach.train_random
+        params = rand_training_params
+        params["iterations"] = iterations
+    
+    params["print_interval"] = print_interval
+    losses, attns = train_func(**params)
+
+    info["coach"] = caoch
+    info["losses"] = losses
+
+    if len(attns) > 0:
+        info["attns"] = attns
+
+    print("Saving...")
+    with open(save_filename, "wb") as f:
+        torch.save(info, f)
+
+if __name__ == "__main__" :
+    main()
