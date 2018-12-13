@@ -15,6 +15,7 @@ import time
 
 def main(
     lang_pair_path = "vi_en_lang_pair.pkl", 
+    lang_pair_valid_path = "vi_en_valid_lang_pair.pkl",
     batch_size = 25,
     learning_rate = .01,
     hidden_size = 150,
@@ -34,6 +35,9 @@ def main(
 
     with open(lang_pair_path, "rb") as f:
         lang_pair = torch.load(f)
+    
+    with open(lang_pair_valid_path, "rb") as f:
+        lang_pair_valid = torch.load(f)
 
     lang_pair.device = device
 
@@ -69,6 +73,7 @@ def main(
 
     coach_params = {
         "lang_pair": lang_pair, 
+        "lang_pair_valid": lang_pair_valid,
         "encoder": encoder, 
         "enc_optimizer": enc_optimizer, 
         "decoder": decoder, 
@@ -126,10 +131,11 @@ def main(
         params["iterations"] = iterations
     
     params["print_interval"] = print_interval
-    losses, attns = train_func(**params)
+    losses, bleu_scores, attns = train_func(**params)
 
     info["coach"] = coach
     info["losses"] = losses
+    info["bleu_scores"] = bleu_scores
 
     if len(attns) > 0:
         info["attns"] = attns

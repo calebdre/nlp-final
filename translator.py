@@ -1,9 +1,9 @@
-from tqdm import tqdm
+from tqdm import tqdm, tqdm_notebook
 import torch
 import sacrebleu
 
 class Translator:
-    def __init__(self, encoder, decoder, lang_pair, device = torch.device("cpu"),  max_output_length = 2000):
+    def __init__(self, encoder, decoder, lang_pair, device = torch.device("cpu"),  max_output_length = 150, is_notebook = False):
         self.encoder = encoder
         self.decoder = decoder
         
@@ -12,64 +12,81 @@ class Translator:
         self.lang_pair = lang_pair
         
         self.device = device
+        if is_notebook:
+            self.tqdm = tqdm_notebook
+        else:
+            self.tqdm = tqdm
     
     def score_translations(self, inputs, targets):
-        return sacrebleu.corpus_bleu(inputs, targets).score * 100
+        return sacrebleu.corpus_bleu(inputs, [targets]).score * 100
     
     def score_corpus(self, inputs, targets):
-        translations = [self.translate(input) for input in inputs]
-        score = self.score_translations(translations, targets)
+        inputs = [self.lang_pair.lang1_vocab.to_idxs(input) for input in inputs]
+        targets_idxs = [self.lang_pair.lang1_vocab.to_idxs(target) for target in targets]
         
-        return score, translations
+        batches = self.lang_pair.batchify(lang1 = inputs, lang2 = targets_idxs)
+        t = []
+        for a, b in batches:
+            for j in b:
+                t.append(j.numpy())
+        
+        translations, attns = self.translate(batches)
+        translations = ["".join(t[1:]) for t in translations]
+        t = [" ".join(self.lang_pair.lang2_vocab.from_idxs(h)[1:-1]) for h in t]
+        t = t[:len(translations)]
+        score = self.score_translations(translations, t)
+        return score, translations, attns
     
-    def translate(self, sentence, method = "greedy"):
-        if isinstance(sentence, list):
-            sentence = torch.tensor(sentence).long()
-            
-        enc_outs, enc_hidden = self.encode(sentence)
+    def translate(self, sentence_batches, method = "greedy"):
+        translations = []
+        for inputs, targets in self.tqdm(sentence_batches, "Corpus Score", leave = False, unit = "batch"):
+            enc_outs, enc_hidden = self.encode(inputs)
+
+            if method == "greedy":
+                batch_translations, attns = self.greedy_search(enc_outs, enc_hidden)
+            elif method == "beam":
+                translations, attns = self.beam_search(enc_outs, enc_hidden)
+            else:
+                raise "No such method '{}'".forat(method)
+
+            batch_translations = batch_translations.numpy()
+            batch_translations = [" ".join(self.lang_pair.lang2_vocab.from_idxs(translation)) for translation in batch_translations]
+            translations += batch_translations
         
-        if method == "greedy":
-            translation, attns = self.greedy_search(enc_outs, enc_hidden)
-        elif method == "beam":
-            translation, attns = self.beam_search(enc_outs, enc_hidden)
-        else:
-            raise "No such method '{}'".forat(method)
-        
-        translation = translation[1:]
-        translation = " ".join(self.lang_pair.lang2_vocab.from_idxs(translation))
-        sentence = " ".join(self.lang_pair.lang1_vocab.from_idxs(sentence))
-        
-        return sentence, translation, attns
+        return translations, attns
     
-    def encode(self, sentence):
+    def encode(self, inputs):
         with torch.no_grad():
-            hidden = self.encoder.init_hidden(1).to(self.device)
-            outs = torch.zeros(1, sentence.shape[0], self.encoder.hidden_size, device = self.device)
+            batch_size, seq_len = inputs.shape
+            hidden = self.encoder.init_hidden(batch_size).to(self.device)
+            outs = torch.zeros(batch_size, seq_len, self.encoder.hidden_size, device = self.device)
             
-            for i in tqdm(range(len(sentence)), desc = "Encoding Input", unit = "token"):
-                out, hidden = self.encoder(sentence[i].view(1,1), hidden)
-                outs[0, i] = out[0, 0]
+            for i in range(seq_len):
+                out, hidden = self.encoder(inputs[:, i], hidden)
+                outs[:, i] = out[:, 0]
             
-            return outs, hidden[:self.encoder.n_layers]
+            return outs, hidden
         
     def beam_search(self, encout_out, encoder_hidden):
         pass
     
     def greedy_search(self, encoder_out, encoder_hidden):
-        translation = [self.sos_idx]
+        translations = torch.tensor([self.sos_idx for i in range(encoder_out.shape[0])]).view(encoder_out.shape[0], -1)
         attns = []
-        hidden = encoder_hidden
+        hidden = encoder_hidden[:self.decoder.n_layers]
         
         with torch.no_grad():
-            for i in tqdm(range(self.max_output_length), desc = "Decoding", unit = "token"):
-                inp = torch.tensor([translation[-1]]).long().view(1,1)
+            i = 0
+            while i < self.max_output_length and (translations == self.lang_pair.lang2_vocab.eos_idx).sum().item() != encoder_out.shape[0]:
                 if self.decoder.has_attention:
-                    preds, hidden, attn = self.decoder(inp, hidden, encoder_out)
+                    preds, hidden, attn = self.decoder(translations[:, i], hidden, encoder_out)
                     attns.append(attn)
                 else:
-                    preds, hidden = self.decoder(inp, hidden, encoder_out)
-
-                pred_prob, pred_idx = torch.max(preds, 0)
-                translation.append(pred_idx.item())
+                    preds, hidden = self.decoder(translations[:, i], hidden, encoder_out)
                 
-        return translation, attns
+                dim = 1 if preds.dim() == 2 else 0
+                pred_prob, pred_idxs = torch.max(preds, dim)
+                translations = torch.cat([translations, pred_idxs.view(translations.shape[0], -1)], dim = 1)
+                i += 1
+                
+        return translations, attns

@@ -44,9 +44,11 @@ class LangPair:
         
         return None
     
-    def batchify(self, size = 32):
+    def batchify(self, size = 32, lang1 = None, lang2 = None):
         combinations = {}
-        for i, (l1, l2) in enumerate(zip(self.lang1, self.lang2)):
+        if lang1 is None or lang2 is None:
+            lang1, lang2 = self.lang1, self.lang2
+        for i, (l1, l2) in enumerate(zip(lang1, lang2)):
             key = "{} {}".format(len(l1), len(l2))
             
             l1 = torch.tensor(l1, dtype=torch.long, device = self.device)

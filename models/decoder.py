@@ -31,6 +31,9 @@ class Decoder(nn.Module):
             attn_applied = self.attn_projection(attn)
             attn_applied = torch.tanh(attn_applied)
             out = self.out(attn_applied)
+            
+            dim = 0 if len(out.shape) == 1 else 1
+            out = F.log_softmax(out, dim = dim)
             return out, hidden, attn_weights
         else:
             output = self.out(inner_rep.squeeze())

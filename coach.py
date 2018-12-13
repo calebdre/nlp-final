@@ -4,10 +4,12 @@ from torch import optim
 import torch.nn.functional as F
 import torch.nn as nn
 import random
+from translator import Translator
 
 class Coach:
-    def __init__(self, lang_pair, encoder, enc_optimizer, decoder, dec_optimizer, loss_fn, device = torch.device("cpu"), is_notebook = False):
+    def __init__(self, lang_pair, lang_pair_valid, encoder, enc_optimizer, decoder, dec_optimizer, loss_fn, device = torch.device("cpu"), is_notebook = False):
         self.lang_pair = lang_pair
+        self.lang_pair_valid = lang_pair_valid
         
         self.encoder = encoder
         self.enc_optim = enc_optimizer
@@ -18,13 +20,20 @@ class Coach:
         self.loss_fn = loss_fn
         self.device = device
         
+        self.is_notebook = is_notebook
         if is_notebook:
             self.tqdm = tqdm_notebook
         else:
             self.tqdm = tqdm
     
+    def validate(self):
+        t = Translator(self.encoder, self.decoder, self.lang_pair, self.device, is_notebook = self.is_notebook)
+        score, _, _ = t.score_corpus(self.lang_pair_valid.lang1_vocab.data, self.lang_pair_valid.lang2_vocab.data)
+        return score
+        
     def train_random(self, iterations = 75000, print_interval = 1500, batch_size = 32):
         losses = []
+        bleu_scores = []
         batch_attentions = []
         interval_losses = []
         iterations = int(iterations / batch_size)
@@ -53,15 +62,18 @@ class Coach:
                 interval = int(i / print_interval)
                 total_intervals = int(iterations / print_interval)
                 avg_interval_loss = sum(interval_losses) / len(interval_losses)
-                m = "Interval ({}/{}) average loss: {:.4f}".format(interval, total_intervals, avg_interval_loss)
+                score = self.validate()
+                bleu_scores.append(score)
+                m = "Interval ({}/{})\taverage loss: {:.4f}\tBleu score: {}".format(interval, total_intervals, avg_interval_loss, score)
                 tqdm.write(m)
                 interval_losses = []
         
-        return losses, batch_attentions
+        return losses, bleu_scores, batch_attentions
     
     def train_epochs(self, num_epochs = 10, print_interval = 1500, batch_size = 32, percent_of_data = .6):
         losses = []
         batch_attentions = []
+        bleu_scores = []
         interval_losses = []
         iterations = self.lang_pair.data_len * num_epochs
         num_intervals = iterations / print_interval
@@ -91,13 +103,15 @@ class Coach:
                 if i > 0 and i % print_interval == 0:
                     interval = int(i / print_interval)
                     avg_interval_loss = sum(interval_losses) / len(interval_losses)
+                    score = self.validate()
+                    blue_scores.append(score)
                     
-                    m = "Epoch [{}/{}]\tInterval [{}/{}]\t Average Loss: {}".format(
-                       epoch, num_epochs, interval, num_intervals, avg_interval_loss 
+                    m = "Epoch [{}/{}]\tInterval [{}/{}]\t Average Loss: {}\tBleu Score: {}".format(
+                       epoch, num_epochs, interval, num_intervals, avg_interval_loss, score
                     )
                     tqdm.write(m)
                     interval_losses = []
-        return losses, batch_attentions
+        return losses, bleu_scores, batch_attentions
     
     def train_encoder(self, input_batch):
         batch_size, input_len = input_batch.shape
