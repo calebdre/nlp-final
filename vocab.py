@@ -2,7 +2,11 @@ from collections import Counter
 
 class Vocab:
     def build(self, data):
-        vocab = list(set(" ".join(data).split(" ")))
+        all_tokens = " ".join(data).split(" ")
+        
+        counter = Counter(all_tokens)
+        counter = Counter({k: c for k, c in counter.items() if c >= 15})
+        vocab = list(counter)
         
         vocab.append("<SOS>")
         self.sos_idx = len(vocab) - 1
@@ -18,7 +22,7 @@ class Vocab:
         
         self.data = data
         self.idx_token = vocab
-        self.token_idx = dict(zip(vocab, range(0,len(vocab))))
+        self.token_idx = dict(zip(vocab, range(len(vocab))))
         
         return self
     
@@ -33,7 +37,10 @@ class Vocab:
         return [self.from_idx(idx) for idx in idxs]
     
     def to_idx(self, token):
-        return self.token_idx[token]
+        if token in self.token_idx:
+            return self.token_idx[token]
+        else:
+            return self.token_idx[self.unk_idx]
     
     def to_idxs(self, tokens):
         return [self.to_idx(token) for token in tokens]

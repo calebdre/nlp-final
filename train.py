@@ -15,9 +15,9 @@ import time
 
 def main(
     lang_pair_path = "vi_en_lang_pair.pkl", 
-    hidden_size = 150, 
     batch_size = 25,
     learning_rate = .01,
+    hidden_size = 150,
     embed_size = 300,
     enc_layers = 1,
     dec_layers = 1,
@@ -128,7 +128,7 @@ def main(
     params["print_interval"] = print_interval
     losses, attns = train_func(**params)
 
-    info["coach"] = caoch
+    info["coach"] = coach
     info["losses"] = losses
 
     if len(attns) > 0:
