@@ -5,6 +5,7 @@ class Decoder(nn.Module):
     def __init__(self, target_vocab_size, hidden_size, attn = None, n_layers = 1, dropout = 0):
         super(Decoder, self).__init__()
         self.hidden_size = hidden_size
+        self.n_layers = n_layers
 
         self.embedding = nn.Embedding(target_vocab_size, hidden_size)
         self.dropout = nn.Dropout(dropout)

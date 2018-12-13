@@ -85,7 +85,6 @@ def main(
     }
 
     rand_training_params = {
-        "learning_rate": learning_rate,
         "iterations": 200000,
         "print_interval": 25000,
         "batch_size": batch_size
@@ -94,7 +93,6 @@ def main(
     epoch_training_params = {
         "num_epochs": 10,
         "print_interval": 10000,
-        "learning_rate": learning_rate,
         "batch_size": batch_size,
         "percent_of_data": 1
     }

@@ -18,7 +18,7 @@ class LangPair:
         self.data_len = len(self.lang1) - 1
         
     def get_sent(self, n):
-        s1 = self.lang1[n] + [self.lang2_vocab.eos_idx]
+        s1 = self.lang1[n]
         s2 = [self.lang2_vocab.sos_idx] + self.lang2[n] + [self.lang2_vocab.eos_idx]
         
         return (
@@ -49,7 +49,6 @@ class LangPair:
         for i, (l1, l2) in enumerate(zip(self.lang1, self.lang2)):
             key = "{} {}".format(len(l1), len(l2))
             
-            l1 = l1
             l1 = torch.tensor(l1, dtype=torch.long, device = self.device)
             
             l2 = [self.lang2_vocab.sos_idx] + l2 + [self.lang2_vocab.eos_idx]

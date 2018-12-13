@@ -23,7 +23,7 @@ class Coach:
         else:
             self.tqdm = tqdm
     
-    def train_random(self, iterations = 75000, print_interval = 1500, learning_rate = .01, batch_size = 32):
+    def train_random(self, iterations = 75000, print_interval = 1500, batch_size = 32):
         losses = []
         batch_attentions = []
         interval_losses = []
@@ -60,7 +60,7 @@ class Coach:
         
         return losses, batch_attentions
     
-    def train_epochs(self, num_epochs = 10, print_interval = 1500, learning_rate = .01, batch_size = 32, percent_of_data = .6):
+    def train_epochs(self, num_epochs = 10, print_interval = 1500, batch_size = 32, percent_of_data = .6):
         losses = []
         batch_attentions = []
         interval_losses = []
@@ -110,14 +110,14 @@ class Coach:
             out, hidden = self.encoder(input_batch[:, i], hidden)
             outs[:, i] = out[:, 0]
 
-        return outs, hidden[:self.encoder.n_layers]
+        return outs, hidden
     
     def train_decoder(self, target_batch, encoder_hidden, encoder_out):
         loss = 0
         attns = []
         
         target_len = target_batch.shape[1]
-        hidden = encoder_hidden
+        hidden = encoder_hidden[:self.decoder.n_layers]
         
         for i in range(target_len):
             dec_input = target_batch[:, i]
