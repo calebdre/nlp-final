@@ -36,7 +36,6 @@ class Coach:
         for i, (input_batch, target_batch) in enumerate(self.tqdm(batches, desc = "Training Iterations", unit = " batch")):
             self.dec_optim.zero_grad()
             self.enc_optim.zero_grad()
-                
             encoder_out, encoder_hidden = self.train_encoder(input_batch)
             loss, attns = self.train_decoder(target_batch, encoder_hidden, encoder_out)
     
@@ -76,7 +75,6 @@ class Coach:
             for i, (input_batch, target_batch) in enumerate(self.tqdm(sampled_batches, leave = False, desc = "Batches", unit = " batch")):
                 self.dec_optim.zero_grad()
                 self.enc_optim.zero_grad()
-                
                 encoder_out, encoder_hidden = self.train_encoder(input_batch)
                 loss, attns = self.train_decoder(target_batch, encoder_hidden, encoder_out)
                 
@@ -126,10 +124,9 @@ class Coach:
                 attns.append(attn_weights)
             else:
                 out, hidden = self.decoder(dec_input, hidden, encoder_out)
-                
+            
             if len(out.shape) == 1:
                 out = out.view(1, -1)
-            
             loss += self.loss_fn(out, target_batch[:, i])
             
         return loss, attns

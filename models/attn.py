@@ -47,7 +47,7 @@ class Attn(nn.Module):
 
         #         256 x 6                        @  6 x 7                      -> 256 x 7 (or 7 x 256)
         context = encoder_outputs.transpose(1,2) @  attn_weights.transpose(1,2)
-        attn = torch.cat([hidden, context], dim = 1)
+        attn = torch.cat([hidden, context.transpose(1,2)], dim = -1).squeeze(1)
         return attn, attn_weights
         
     # "dot, a simple dot product between the states"
@@ -56,7 +56,7 @@ class Attn(nn.Module):
     
     # "general, a dot product between the decoder hidden state and a linear transform of the encoder state"
     def score_general(self, hidden, enc_out):
-        return hidden @ self.attn(enc_out)
+        return hidden @ self.attn(enc_out).transpose(1,2)
     
     # "concat, a dot product between a new parameter $v_a$ and a linear transform of the states concatenated together"
     def score_concat(self, hidden, enc_out):

@@ -13,11 +13,16 @@ class Translator:
         
         self.device = device
     
-    def score_translation(self, input, target):
-        target = [target]
-        return sacrebleu.raw_corpus_bleu(input, [target]).score * 100
+    def score_translations(self, inputs, targets):
+        return sacrebleu.corpus_bleu(inputs, targets).score * 100
     
-    def translate(self, sentence, method = "greedy", do_score = True):
+    def score_corpus(self, inputs, targets):
+        translations = [self.translate(input) for input in inputs]
+        score = self.score_translations(translations, targets)
+        
+        return score, translations
+    
+    def translate(self, sentence, method = "greedy"):
         if isinstance(sentence, list):
             sentence = torch.tensor(sentence).long()
             
@@ -34,10 +39,7 @@ class Translator:
         translation = " ".join(self.lang_pair.lang2_vocab.from_idxs(translation))
         sentence = " ".join(self.lang_pair.lang1_vocab.from_idxs(sentence))
         
-        if do_score:
-            score = self.score_translation(sentence, translation)
-        
-        return sentence, translation, score, attns
+        return sentence, translation, attns
     
     def encode(self, sentence):
         with torch.no_grad():

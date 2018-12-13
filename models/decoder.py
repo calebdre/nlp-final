@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
+import torch
 
 class Decoder(nn.Module):
     def __init__(self, target_vocab_size, hidden_size, attn = None, n_layers = 1, dropout = 0):
@@ -28,7 +29,7 @@ class Decoder(nn.Module):
             # 7 x 256 * 2
             attn, attn_weights = self.attn(inner_rep, encoder_out)
             attn_applied = self.attn_projection(attn)
-            attn_applied = F.tanh(attn_applied)
+            attn_applied = torch.tanh(attn_applied)
             out = self.out(attn_applied)
             return out, hidden, attn_weights
         else:
