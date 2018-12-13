@@ -28,7 +28,7 @@ class Translator:
         t = []
         for a, b in batches:
             for j in b:
-                t.append(j.numpy())
+                t.append(j)
         
         translations, attns = self.translate(batches)
         translations = ["".join(t[1:]) for t in translations]
