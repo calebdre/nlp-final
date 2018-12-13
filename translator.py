@@ -71,7 +71,7 @@ class Translator:
         pass
     
     def greedy_search(self, encoder_out, encoder_hidden):
-        translations = torch.tensor([self.sos_idx for i in range(encoder_out.shape[0])]).view(encoder_out.shape[0], -1)
+        translations = torch.tensor([self.sos_idx for i in range(encoder_out.shape[0])], device = self.device).view(encoder_out.shape[0], -1)
         attns = []
         hidden = encoder_hidden[:self.decoder.n_layers]
         
