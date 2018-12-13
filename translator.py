@@ -40,7 +40,7 @@ class Translator:
     def translate(self, sentence_batches, method = "greedy"):
         translations = []
         for inputs, targets in self.tqdm(sentence_batches, "Corpus Score", leave = False, unit = "batch"):
-            enc_outs, enc_hidden = self.encode(inputs)
+            enc_outs, enc_hidden = self.encode(inputs.to(self.device))
 
             if method == "greedy":
                 batch_translations, attns = self.greedy_search(enc_outs, enc_hidden)
@@ -49,7 +49,7 @@ class Translator:
             else:
                 raise "No such method '{}'".forat(method)
 
-            batch_translations = batch_translations.numpy()
+            batch_translations = batch_translations.cpu().numpy()
             batch_translations = [" ".join(self.lang_pair.lang2_vocab.from_idxs(translation)) for translation in batch_translations]
             translations += batch_translations
         
