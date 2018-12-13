@@ -1,4 +1,4 @@
-from tqdm import tqdm, tqdm_notebook
+from tqdm import tqdm as _tqdm, tqdm_notebook
 import torch
 from torch import optim
 import torch.nn.functional as F
@@ -6,7 +6,7 @@ import torch.nn as nn
 import random
 
 class Coach:
-    def __init__(self, lang_pair, encoder, enc_optimizer, decoder, dec_optimizer, loss_fn, device = torch.device("cpu")):
+    def __init__(self, lang_pair, encoder, enc_optimizer, decoder, dec_optimizer, loss_fn, device = torch.device("cpu"), is_notebook = False):
         self.lang_pair = lang_pair
         
         self.encoder = encoder
@@ -17,6 +17,11 @@ class Coach:
         
         self.loss_fn = loss_fn
         self.device = device
+        
+        if is_notebook:
+            self.tqdm = tqdm_notebook
+        else:
+            self.tqdm = _tqdm
     
     def train_random(self, iterations = 75000, print_interval = 1500, learning_rate = .01, batch_size = 32):
         losses = []
@@ -27,8 +32,8 @@ class Coach:
         
         print("Fetching batches...\n")
         batches = self.lang_pair.batchify(size = batch_size)
-        batches = random.choices(batches, k = iterations)        
-        for i, (input_batch, target_batch) in enumerate(tqdm_notebook(batches, desc = "Training Iterations", unit = " batch")):
+        batches = random.choices(batches, k = iterations)  
+        for i, (input_batch, target_batch) in enumerate(self.tqdm(batches, desc = "Training Iterations", unit = " batch")):
             self.dec_optim.zero_grad()
             self.enc_optim.zero_grad()
                 
@@ -65,10 +70,10 @@ class Coach:
         print("Fetching batches...\n")
         batches = self.lang_pair.batchify(size = batch_size)
         
-        for epoch in tqdm_notebook(range(num_epochs), desc = "Epochs", unit = " epoch", leave = False):
+        for epoch in self.tqdm(range(num_epochs), desc = "Epochs", unit = " epoch", leave = False):
             sampled_batches = random.sample(batches, k = int(len(batches) * percent_of_data))
             
-            for i, (input_batch, target_batch) in enumerate(tqdm_notebook(sampled_batches, leave = False, desc = "Batches", unit = " batch")):
+            for i, (input_batch, target_batch) in enumerate(self.tqdm(sampled_batches, leave = False, desc = "Batches", unit = " batch")):
                 self.dec_optim.zero_grad()
                 self.enc_optim.zero_grad()
                 

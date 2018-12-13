@@ -28,6 +28,7 @@ def main(
     iterations = 200000,
     print_interval = 25000,
     num_epochs = None,
+    is_notebook = False
 ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -73,7 +74,8 @@ def main(
         "decoder": decoder, 
         "dec_optimizer": dec_optimizer, 
         "loss_fn": loss_fn,
-        "device": device
+        "device": device,
+        "is_notebook": is_notebook
     }
 
     coach_attn_params = {
