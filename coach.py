@@ -1,4 +1,4 @@
-from tqdm import tqdm as _tqdm, tqdm_notebook
+from tqdm import tqdm, tqdm_notebook
 import torch
 from torch import optim
 import torch.nn.functional as F
@@ -21,7 +21,7 @@ class Coach:
         if is_notebook:
             self.tqdm = tqdm_notebook
         else:
-            self.tqdm = _tqdm
+            self.tqdm = tqdm
     
     def train_random(self, iterations = 75000, print_interval = 1500, learning_rate = .01, batch_size = 32):
         losses = []
@@ -55,7 +55,7 @@ class Coach:
                 total_intervals = int(iterations / print_interval)
                 avg_interval_loss = sum(interval_losses) / len(interval_losses)
                 m = "Interval ({}/{}) average loss: {:.4f}".format(interval, total_intervals, avg_interval_loss)
-                self.tqdm.write(m)
+                tqdm.write(m)
                 interval_losses = []
         
         return losses, batch_attentions
@@ -97,7 +97,7 @@ class Coach:
                     m = "Epoch [{}/{}]\tInterval [{}/{}]\t Average Loss: {}".format(
                        epoch, num_epochs, interval, num_intervals, avg_interval_loss 
                     )
-                    self.tqdm.write(m)
+                    tqdm.write(m)
                     interval_losses = []
         return losses, batch_attentions
     
