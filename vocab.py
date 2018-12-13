@@ -1,6 +1,8 @@
 from collections import Counter
 
 class Vocab:
+    unk_token = "<unk>"
+    
     def build(self, data):
         all_tokens = " ".join(data).split(" ")
         
@@ -8,16 +10,16 @@ class Vocab:
         counter = Counter({k: c for k, c in counter.items() if c >= 15})
         vocab = list(counter)
         
-        vocab.append("<SOS>")
+        vocab.append("<sos>")
         self.sos_idx = len(vocab) - 1
         
-        vocab.append("<EOS>")
+        vocab.append("<eos>")
         self.eos_idx = len(vocab) - 1
         
-        vocab.append("<PAD>")
+        vocab.append("<pad>")
         self.pad_idx = len(vocab) - 1
         
-        vocab.append("<UNK>")
+        vocab.append(self.unk_token)
         self.unk_idx = len(vocab) - 1
         
         self.data = data
@@ -32,7 +34,7 @@ class Vocab:
     
     def from_idx(self, idx):
         return self.idx_token[idx]
-    
+
     def from_idxs(self, idxs):
         return [self.from_idx(idx) for idx in idxs]
     
@@ -40,7 +42,7 @@ class Vocab:
         if token in self.token_idx:
             return self.token_idx[token]
         else:
-            return self.token_idx[self.unk_idx]
+            return self.token_idx[self.unk_token]
     
     def to_idxs(self, tokens):
         return [self.to_idx(token) for token in tokens]
