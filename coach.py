@@ -55,7 +55,7 @@ class Coach:
                 total_intervals = int(iterations / print_interval)
                 avg_interval_loss = sum(interval_losses) / len(interval_losses)
                 m = "Interval ({}/{}) average loss: {:.4f}".format(interval, total_intervals, avg_interval_loss)
-                tqdm.write(m)
+                self.tqdm.write(m)
                 interval_losses = []
         
         return losses, batch_attentions
@@ -97,7 +97,7 @@ class Coach:
                     m = "Epoch [{}/{}]\tInterval [{}/{}]\t Average Loss: {}".format(
                        epoch, num_epochs, interval, num_intervals, avg_interval_loss 
                     )
-                    tqdm.write(m)
+                    self.tqdm.write(m)
                     interval_losses = []
         return losses, batch_attentions
     
