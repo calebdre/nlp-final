@@ -99,12 +99,11 @@ class Coach:
                 losses.append(loss)
                 interval_losses.append(loss)
                 batch_attentions.append(attns)
-                
                 if i > 0 and i % print_interval == 0:
                     interval = int(i / print_interval)
                     avg_interval_loss = sum(interval_losses) / len(interval_losses)
                     score = self.validate()
-                    blue_scores.append(score)
+                    bleu_scores.append(score)
                     
                     m = "Epoch [{}/{}]\tInterval [{}/{}]\t Average Loss: {}\tBleu Score: {}".format(
                        epoch, num_epochs, interval, num_intervals, avg_interval_loss, score
@@ -119,7 +118,7 @@ class Coach:
         hidden = self.encoder.init_hidden(batch_size).to(self.device)
         
         for i in range(input_len):
-            out, hidden = self.encoder(input_batch[:, i], hidden)
+            out, hidden, hidden_attn = self.encoder(input_batch[:, i], hidden)
             outs[:, i] = out[:, 0]
 
         return outs, hidden

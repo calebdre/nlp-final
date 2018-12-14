@@ -44,7 +44,7 @@ class LangPair:
         
         return None
     
-    def batchify(self, size = 32, lang1 = None, lang2 = None):
+    def batchify(self, size = 32, lang1 = None, lang2 = None, shuffle = True):
         combinations = {}
         if lang1 is None or lang2 is None:
             lang1, lang2 = self.lang1, self.lang2
@@ -85,7 +85,9 @@ class LangPair:
             else:
                 batches.append((s1s, s2s))
 
-        random.shuffle(batches)
+        if shuffle:
+            random.shuffle(batches)
+            
         return batches
     
     def get_rand_batch(self, size = 32):

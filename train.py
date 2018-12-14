@@ -25,6 +25,7 @@ def main(
     enc_dropout = 0,
     dec_dropout = 0,
     use_attn = False,
+    use_self_attn = False,
     save_filename = "training_run_{}.pkl".format(int(time.time())),
     iterations = 200000,
     print_interval = 25000,
@@ -44,6 +45,7 @@ def main(
     enc_params = {
         "input_vocab_size": lang_pair.lang1_vocab.size,
         "hidden_size": hidden_size,
+        "use_self_attn": use_self_attn,
         "n_layers": enc_layers,
         "dropout": enc_dropout,
         "embed_size": embed_size
@@ -91,13 +93,13 @@ def main(
 
     rand_training_params = {
         "iterations": 200000,
-        "print_interval": 25000,
+        "print_interval": print_interval,
         "batch_size": batch_size
     }
 
     epoch_training_params = {
         "num_epochs": 10,
-        "print_interval": 10000,
+        "print_interval": print_interval,
         "batch_size": batch_size,
         "percent_of_data": 1
     }

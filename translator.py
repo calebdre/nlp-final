@@ -25,21 +25,15 @@ class Translator:
         targets_idxs = [self.lang_pair.lang1_vocab.to_idxs(target) for target in targets]
         
         batches = self.lang_pair.batchify(lang1 = inputs, lang2 = targets_idxs)
-        t = []
-        for a, b in batches:
-            for j in b:
-                t.append(j)
         
-        translations, attns = self.translate(batches)
-        translations = ["".join(t[1:]) for t in translations]
-        t = [" ".join(self.lang_pair.lang2_vocab.from_idxs(h)[1:-1]) for h in t]
-        t = t[:len(translations)]
-        score = self.score_translations(translations, t)
+        translations, targets, attns = self.translate(batches[:20])
+        score = self.score_translations(translations, targets)
         return score, translations, attns
     
     def translate(self, sentence_batches, method = "greedy"):
         translations = []
-        for inputs, targets in self.tqdm(sentence_batches, "Corpus Score", leave = False, unit = "batch"):
+        targets = []
+        for inputs, targets_ in self.tqdm(sentence_batches, "Corpus Score", leave = False, unit = "batch"):
             enc_outs, enc_hidden = self.encode(inputs.to(self.device))
 
             if method == "greedy":
@@ -49,11 +43,15 @@ class Translator:
             else:
                 raise "No such method '{}'".forat(method)
 
-            batch_translations = batch_translations.cpu().numpy()
+            batch_translations = batch_translations.cpu().numpy()            
             batch_translations = [" ".join(self.lang_pair.lang2_vocab.from_idxs(translation)) for translation in batch_translations]
+            
+            targets_ =  [" ".join(self.lang_pair.lang2_vocab.from_idxs(p)) for p in targets_]
             translations += batch_translations
+            targets += targets_
         
-        return translations, attns
+        
+        return translations, targets, attns
     
     def encode(self, inputs):
         with torch.no_grad():
@@ -62,7 +60,7 @@ class Translator:
             outs = torch.zeros(batch_size, seq_len, self.encoder.hidden_size, device = self.device)
             
             for i in range(seq_len):
-                out, hidden = self.encoder(inputs[:, i], hidden)
+                out, hidden, _ = self.encoder(inputs[:, i], hidden)
                 outs[:, i] = out[:, 0]
             
             return outs, hidden
