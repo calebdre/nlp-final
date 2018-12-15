@@ -20,15 +20,15 @@ class Translator:
     def score_translations(self, inputs, targets):
         return sacrebleu.corpus_bleu(inputs, [targets]).score * 100
     
-    def score_corpus(self, inputs, targets):
+    def score_corpus(self, inputs, targets, n):
         inputs = [self.lang_pair.lang1_vocab.to_idxs(input) for input in inputs]
         targets_idxs = [self.lang_pair.lang1_vocab.to_idxs(target) for target in targets]
         
         batches = self.lang_pair.batchify(lang1 = inputs, lang2 = targets_idxs)
         
-        translations, targets, attns = self.translate(batches[:20])
+        translations, targets, attns = self.translate(batches[:n])
         score = self.score_translations(translations, targets)
-        return score, translations, attns
+        return score, translations, targets, attns
     
     def translate(self, sentence_batches, method = "greedy"):
         translations = []
@@ -64,9 +64,16 @@ class Translator:
                 outs[:, i] = out[:, 0]
             
             return outs, hidden
-        
     def beam_search(self, encout_out, encoder_hidden):
-        pass
+        translations = torch.tensor([self.sos_idx for i in range(encoder_out.shape[0])], device = self.device).view(encoder_out.shape[0], -1)
+        attns = []
+        hidden = encoder_hidden[:self.decoder.n_layers]
+        while i < self.max_output_length and (translations == self.lang_pair.lang2_vocab.eos_idx).sum().item() != encoder_out.shape[0]:
+                if self.decoder.has_attention:
+                    preds, hidden, attn = self.decoder(translations[:, i], hidden, encoder_out)
+                    attns.append(attn)
+                else:
+                    preds, hidden = self.decoder(translations[:, i], hidden, encoder_out)
     
     def greedy_search(self, encoder_out, encoder_hidden):
         translations = torch.tensor([self.sos_idx for i in range(encoder_out.shape[0])], device = self.device).view(encoder_out.shape[0], -1)

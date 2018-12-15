@@ -26,18 +26,19 @@ class Coach:
         else:
             self.tqdm = tqdm
     
-    def validate(self):
+    def validate(self, n):
         t = Translator(self.encoder, self.decoder, self.lang_pair, self.device, is_notebook = self.is_notebook)
-        score, _, _ = t.score_corpus(self.lang_pair_valid.lang1_vocab.data, self.lang_pair_valid.lang2_vocab.data)
+        score, _, _, _ = t.score_corpus(self.lang_pair_valid.lang1_vocab.data, self.lang_pair_valid.lang2_vocab.data, n)
         return score
         
-    def train_random(self, iterations = 75000, print_interval = 1500, batch_size = 32):
+    def train_random(self, iterations = 75000, print_interval = 1500, batch_size = 32, validate_first = 200):
         losses = []
         bleu_scores = []
         batch_attentions = []
         interval_losses = []
         iterations = int(iterations / batch_size)
         print_interval = int(print_interval / batch_size)
+        print_interval = 1 if print_interval == 0 else print_interval
         
         print("Fetching batches...\n")
         batches = self.lang_pair.batchify(size = batch_size)
@@ -62,7 +63,7 @@ class Coach:
                 interval = int(i / print_interval)
                 total_intervals = int(iterations / print_interval)
                 avg_interval_loss = sum(interval_losses) / len(interval_losses)
-                score = self.validate()
+                score = self.validate(validate_first)
                 bleu_scores.append(score)
                 m = "Interval ({}/{})\taverage loss: {:.4f}\tBleu score: {}".format(interval, total_intervals, avg_interval_loss, score)
                 tqdm.write(m)
@@ -70,7 +71,7 @@ class Coach:
         
         return losses, bleu_scores, batch_attentions
     
-    def train_epochs(self, num_epochs = 10, print_interval = 1500, batch_size = 32, percent_of_data = .6):
+    def train_epochs(self, num_epochs = 10, print_interval = 1500, batch_size = 32, percent_of_data = .6, validate_first = 200):
         losses = []
         batch_attentions = []
         bleu_scores = []
@@ -102,7 +103,7 @@ class Coach:
                 if i > 0 and i % print_interval == 0:
                     interval = int(i / print_interval)
                     avg_interval_loss = sum(interval_losses) / len(interval_losses)
-                    score = self.validate()
+                    score = self.validate(validate_first)
                     bleu_scores.append(score)
                     
                     m = "Epoch [{}/{}]\tInterval [{}/{}]\t Average Loss: {}\tBleu Score: {}".format(

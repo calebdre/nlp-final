@@ -20,6 +20,7 @@ def main(
     learning_rate = .01,
     hidden_size = 150,
     embed_size = 300,
+    validate_first = 200,
     enc_layers = 1,
     dec_layers = 1,
     enc_dropout = 0,
@@ -92,16 +93,18 @@ def main(
     }
 
     rand_training_params = {
-        "iterations": 200000,
+        "iterations": iterations,
         "print_interval": print_interval,
-        "batch_size": batch_size
+        "batch_size": batch_size,
+        "validate_first": validate_first
     }
 
     epoch_training_params = {
         "num_epochs": 10,
         "print_interval": print_interval,
         "batch_size": batch_size,
-        "percent_of_data": 1
+        "percent_of_data": 1,
+        "validate_first":validate_first
     }
 
     info = {
